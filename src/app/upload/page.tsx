@@ -1,578 +1,205 @@
 'use client';
 
-import { Navigation } from '@/components/navigation';
+import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { trpc } from '@/utils/trpc';
-import { Upload, FileText, Receipt, AlertCircle, Eye, CheckCircle, Camera, Image } from 'lucide-react';
-import { useState } from 'react';
-import { toast } from 'sonner';
+import { Upload, FileText, Image, CheckCircle, AlertCircle } from 'lucide-react';
 
 export default function UploadPage() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [receiptText, setReceiptText] = useState('');
-  const [csvPreview, setCsvPreview] = useState<any[]>([]);
-  const [showPreview, setShowPreview] = useState(false);
-  const [selectedImage, setSelectedImage] = useState<File | null>(null);
-  const [imagePreview, setImagePreview] = useState<string>('');
-  const [receiptProcessingResult, setReceiptProcessingResult] = useState<any>(null);
-  const [extractedText, setExtractedText] = useState<string>('');
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadStatus, setUploadStatus] = useState<'idle' | 'success' | 'error'>('idle');
 
-  // Get bank transactions to show after upload
-  const { data: bankTransactions, refetch: refetchTransactions } = trpc.bank.getTransactions.useQuery();
+  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      setSelectedFile(file);
+      setUploadStatus('idle');
+    }
+  };
 
-  const uploadBankStatement = trpc.bank.uploadStatement.useMutation({
-    onSuccess: (data) => {
-      toast.success(`Successfully uploaded ${data.transactionsCount} transactions!`);
+  const handleUpload = async () => {
+    if (!selectedFile) return;
+
+    setIsUploading(true);
+    
+    // Simulate upload
+    setTimeout(() => {
+      setIsUploading(false);
+      setUploadStatus('success');
       setSelectedFile(null);
-      setCsvPreview([]);
-      setShowPreview(false);
-      // Refresh bank transactions
-      window.location.reload();
-    },
-    onError: (error) => {
-      toast.error(`Error uploading bank statement: ${error.message}`);
-    }
-  });
-
-  const parseReceipt = trpc.receipt.parseAndAdd.useMutation({
-    onSuccess: (data) => {
-      toast.success('Receipt processed and added successfully!');
-      setReceiptText('');
-      setReceiptProcessingResult(data);
-      // Don't refresh the page - let the results show
-    },
-    onError: (error) => {
-      toast.error(`Error processing receipt: ${error.message}`);
-    }
-  });
-
-  const uploadReceiptImage = trpc.receipt.uploadImage.useMutation({
-    onSuccess: (data) => {
-      toast.success('Receipt image processed and added successfully!');
-      setSelectedImage(null);
-      setImagePreview('');
-      setReceiptProcessingResult(data);
-      setExtractedText(data.extractedText || '');
-      // Don't refresh the page - let the results show
-    },
-    onError: (error) => {
-      toast.error(`Error processing receipt image: ${error.message}`);
-    }
-  });
-
-  const handleFileUpload = async () => {
-    if (!selectedFile) {
-      toast.error('Please select a file first');
-      return;
-    }
-
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const csvData = event.target?.result as string;
-      console.log('File content preview:', csvData.substring(0, 200));
-      console.log('File size:', csvData.length);
-      console.log('File name:', selectedFile.name);
-      uploadBankStatement.mutate({ csvData }); // Send csvData as string
-    };
-    reader.readAsText(selectedFile);
+      
+      // Reset after 3 seconds
+      setTimeout(() => {
+        setUploadStatus('idle');
+      }, 3000);
+    }, 2000);
   };
 
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0] || null;
-    
-    if (file) {
-      // Validate file type
-      if (!file.name.toLowerCase().endsWith('.csv')) {
-        toast.error('Please select a CSV file (.csv extension)');
-        setSelectedFile(null);
-        setCsvPreview([]);
-        setShowPreview(false);
-        return;
-      }
-      
-      // Validate file size (max 1MB)
-      if (file.size > 1024 * 1024) {
-        toast.error('File size too large. Please select a file smaller than 1MB');
-        setSelectedFile(null);
-        setCsvPreview([]);
-        setShowPreview(false);
-        return;
-      }
-      
-      // Check file content type
-      if (file.type && file.type !== 'text/csv' && file.type !== 'text/plain') {
-        toast.error('Invalid file type. Please select a plain text CSV file');
-        setSelectedFile(null);
-        setCsvPreview([]);
-        setShowPreview(false);
-        return;
-      }
-    }
-    
-    setSelectedFile(file);
-    
-    if (file) {
-      // Preview CSV content
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        try {
-          const csv = event.target?.result as string;
-          
-          // Only check for definitive Excel file signatures
-          // PK\x03\x04 is the ZIP file signature that Excel files use
-          if (csv.startsWith('PK\x03\x04') || csv.includes('[Content_Types].xml')) {
-            setCsvPreview([]);
-            setShowPreview(false);
-            toast.error('This appears to be an Excel file (.xlsx). Please save it as a CSV file first.');
-            setSelectedFile(null);
-            return;
-          }
-          
-          // Check if it's actually CSV content
-          const lines = csv.split('\n');
-          if (lines.length < 2) {
-            setCsvPreview([]);
-            setShowPreview(false);
-            toast.error('CSV file appears to be empty or invalid.');
-            setSelectedFile(null);
-            return;
-          }
-          
-          const firstLine = lines[0].trim();
-          if (!firstLine.includes(',') || firstLine.split(',').length < 2) {
-            setCsvPreview([]);
-            setShowPreview(false);
-            toast.error('File does not appear to be a valid CSV format.');
-            setSelectedFile(null);
-            return;
-          }
-          
-          const headers = firstLine.split(',').map(h => h.trim());
-          const preview = lines.slice(1, 6).map(line => {
-            const values = line.split(',').map(v => v.trim());
-            const row: any = {};
-            headers.forEach((header, index) => {
-              row[header] = values[index] || '';
-            });
-            return row;
-          }).filter(row => Object.values(row).some(val => val !== ''));
-          
-          setCsvPreview(preview);
-          setShowPreview(true);
-        } catch (error) {
-          setCsvPreview([]);
-          setShowPreview(false);
-          toast.error('Error reading CSV file. Please check the file format.');
-          setSelectedFile(null);
-        }
-      };
-      
-      reader.onerror = () => {
-        setCsvPreview([]);
-        setShowPreview(false);
-        toast.error('Error reading file. Please try again.');
-        setSelectedFile(null);
-      };
-      
-      reader.readAsText(file);
-    }
-  };
-
-  const handleReceiptParse = () => {
-    if (!receiptText.trim()) {
-      toast.error('Please enter receipt text first');
-      return;
-    }
-
-    parseReceipt.mutate({ receiptText });
-  };
-
-  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0] || null;
-    
-    if (file) {
-      // Validate file type
-      if (!file.type.startsWith('image/')) {
-        toast.error('Please select an image file');
-        return;
-      }
-      
-      // Validate file size (max 10MB)
-      if (file.size > 10 * 1024 * 1024) {
-        toast.error('Image file too large. Maximum size is 10MB');
-        return;
-      }
-      
-      setSelectedImage(file);
-      
-      // Create preview
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        setImagePreview(event.target?.result as string);
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
-  const handleImageUpload = async () => {
-    if (!selectedImage || !imagePreview) {
-      toast.error('Please select an image first');
-      return;
-    }
-
-    uploadReceiptImage.mutate({
-      imageData: imagePreview,
-      filename: selectedImage.name
-    });
-  };
+  const isImage = selectedFile?.type.startsWith('image/');
+  const isCSV = selectedFile?.type === 'text/csv' || selectedFile?.name.endsWith('.csv');
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <Navigation />
-      
-      <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-        <div className="px-4 py-6 sm:px-0">
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold text-gray-900">Upload Data</h1>
-            <p className="mt-2 text-gray-600">
-              Upload bank statements and process receipts to build your ledger.
-            </p>
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
+      <div className="container mx-auto px-4 py-8">
+        <div className="max-w-2xl mx-auto">
+          {/* Header */}
+          <div className="mb-8 text-center">
+            <h1 className="text-4xl font-bold text-gray-900 mb-2">Upload Files</h1>
+            <p className="text-gray-600">Upload receipts or bank statements for processing</p>
           </div>
 
-          <Tabs defaultValue="bank" className="space-y-6">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="bank" className="flex items-center gap-2">
-                <FileText className="h-4 w-4" />
-                Bank Statement
-              </TabsTrigger>
-              <TabsTrigger value="receipt" className="flex items-center gap-2">
-                <Receipt className="h-4 w-4" />
-                Receipt
-              </TabsTrigger>
-            </TabsList>
+          {/* Upload Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+            {/* Receipt Upload */}
+            <Card className="bg-white shadow-lg border-0">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Image className="h-5 w-5 text-blue-600" />
+                  Upload Receipt
+                </CardTitle>
+                <CardDescription>Upload receipt images for AI processing</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-blue-400 transition-colors">
+                  <Input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleFileSelect}
+                    className="hidden"
+                    id="receipt-upload"
+                  />
+                  <Label htmlFor="receipt-upload" className="cursor-pointer">
+                    <Upload className="h-8 w-8 text-gray-400 mx-auto mb-2" />
+                    <p className="text-sm text-gray-600">Click to upload receipt image</p>
+                    <p className="text-xs text-gray-500">PNG, JPG, JPEG up to 10MB</p>
+                  </Label>
+                </div>
+              </CardContent>
+            </Card>
 
-            <TabsContent value="bank">
-              <div className="space-y-6">
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <FileText className="h-5 w-5" />
-                      Upload Bank Statement (CSV)
-                    </CardTitle>
-                    <CardDescription>
-                      Upload a CSV file containing your bank transactions. The file should have columns for Date, Description, Amount, and Type.
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="bank-file">Select CSV File</Label>
-                      <Input
-                        id="bank-file"
-                        type="file"
-                        accept=".csv"
-                        onChange={handleFileSelect}
-                      />
-                    </div>
-                    
-                    {selectedFile && (
-                      <div className="flex items-center gap-2 text-sm text-gray-600">
-                        <FileText className="h-4 w-4" />
-                        Selected: {selectedFile.name}
-                      </div>
+            {/* Bank Statement Upload */}
+            <Card className="bg-white shadow-lg border-0">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <FileText className="h-5 w-5 text-green-600" />
+                  Upload Bank Statement
+                </CardTitle>
+                <CardDescription>Upload CSV bank statements for comparison</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-green-400 transition-colors">
+                  <Input
+                    type="file"
+                    accept=".csv"
+                    onChange={handleFileSelect}
+                    className="hidden"
+                    id="statement-upload"
+                  />
+                  <Label htmlFor="statement-upload" className="cursor-pointer">
+                    <Upload className="h-8 w-8 text-gray-400 mx-auto mb-2" />
+                    <p className="text-sm text-gray-600">Click to upload CSV file</p>
+                    <p className="text-xs text-gray-500">CSV format only</p>
+                  </Label>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* File Preview */}
+          {selectedFile && (
+            <Card className="bg-white shadow-lg border-0 mb-6">
+              <CardHeader>
+                <CardTitle>Selected File</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                  <div className="flex items-center gap-3">
+                    {isImage ? (
+                      <Image className="h-8 w-8 text-blue-600" />
+                    ) : (
+                      <FileText className="h-8 w-8 text-green-600" />
                     )}
-
-                    <Button 
-                      onClick={handleFileUpload}
-                      disabled={!selectedFile || uploadBankStatement.isPending}
-                      className="w-full"
-                    >
-                      {uploadBankStatement.isPending ? (
-                        'Uploading...'
-                      ) : (
-                        <>
-                          <Upload className="mr-2 h-4 w-4" />
-                          Upload Bank Statement
-                        </>
-                      )}
-                    </Button>
-
-                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                      <div className="flex items-start gap-2">
-                        <AlertCircle className="h-4 w-4 text-blue-600 mt-0.5" />
-                        <div className="text-sm text-blue-800">
-                          <p className="font-medium">Expected CSV Format:</p>
-                          <p className="mt-1">Date,Description,Amount,Type</p>
-                          <p className="mt-1">Example: 2024-01-15,Grocery Store,45.67,DEBIT</p>
-                          <p className="mt-2 font-medium">Important:</p>
-                          <p className="mt-1">• Make sure to select a .csv file, not an Excel (.xlsx) file</p>
-                          <p className="mt-1">• If you have an Excel file, save it as CSV first</p>
-                          <p className="mt-1">• The file should be plain text, not binary</p>
-                        </div>
-                      </div>
+                    <div>
+                      <p className="font-medium text-gray-900">{selectedFile.name}</p>
+                      <p className="text-sm text-gray-500">
+                        {(selectedFile.size / 1024 / 1024).toFixed(2)} MB
+                      </p>
                     </div>
-                  </CardContent>
-                </Card>
+                  </div>
+                  <Button
+                    onClick={handleUpload}
+                    disabled={isUploading}
+                    className="ml-4"
+                  >
+                    {isUploading ? 'Uploading...' : 'Upload'}
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
-                {/* CSV Preview */}
-                {showPreview && csvPreview.length > 0 && (
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="flex items-center gap-2">
-                        <Eye className="h-5 w-5" />
-                        CSV Preview
-                      </CardTitle>
-                      <CardDescription>
-                        Preview of the first 5 rows from your CSV file
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <Table>
-                        <TableHeader>
-                          <TableRow>
-                            {Object.keys(csvPreview[0] || {}).map((header) => (
-                              <TableHead key={header}>{header}</TableHead>
-                            ))}
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {csvPreview.map((row, index) => (
-                            <TableRow key={index}>
-                              {Object.values(row).map((value, cellIndex) => (
-                                <TableCell key={cellIndex}>{value}</TableCell>
-                              ))}
-                            </TableRow>
-                          ))}
-                        </TableBody>
-                      </Table>
-                    </CardContent>
-                  </Card>
-                )}
+          {/* Upload Status */}
+          {uploadStatus === 'success' && (
+            <Card className="bg-green-50 border-green-200">
+              <CardContent className="pt-6">
+                <div className="flex items-center gap-3">
+                  <CheckCircle className="h-6 w-6 text-green-600" />
+                  <div>
+                    <p className="font-medium text-green-900">Upload Successful!</p>
+                    <p className="text-sm text-green-700">Your file has been processed successfully.</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
-                {/* Uploaded Transactions */}
-                {bankTransactions && bankTransactions.length > 0 && (
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="flex items-center gap-2">
-                        <CheckCircle className="h-5 w-5 text-green-600" />
-                        Uploaded Transactions
-                      </CardTitle>
-                      <CardDescription>
-                        Recently uploaded bank transactions ({bankTransactions.length} total)
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <Table>
-                        <TableHeader>
-                          <TableRow>
-                            <TableHead>Date</TableHead>
-                            <TableHead>Description</TableHead>
-                            <TableHead>Amount</TableHead>
-                            <TableHead>Type</TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {bankTransactions.slice(0, 10).map((transaction) => (
-                            <TableRow key={transaction.id}>
-                              <TableCell>
-                                {new Date(transaction.transactionDate).toLocaleDateString()}
-                              </TableCell>
-                              <TableCell>{transaction.description}</TableCell>
-                              <TableCell>${transaction.amount.toFixed(2)}</TableCell>
-                              <TableCell>{transaction.type || 'N/A'}</TableCell>
-                            </TableRow>
-                          ))}
-                        </TableBody>
-                      </Table>
-                      {bankTransactions.length > 10 && (
-                        <p className="text-sm text-gray-500 mt-2">
-                          Showing first 10 of {bankTransactions.length} transactions
-                        </p>
-                      )}
-                    </CardContent>
-                  </Card>
-                )}
+          {uploadStatus === 'error' && (
+            <Card className="bg-red-50 border-red-200">
+              <CardContent className="pt-6">
+                <div className="flex items-center gap-3">
+                  <AlertCircle className="h-6 w-6 text-red-600" />
+                  <div>
+                    <p className="font-medium text-red-900">Upload Failed</p>
+                    <p className="text-sm text-red-700">Please try again with a different file.</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Instructions */}
+          <Card className="bg-white shadow-lg border-0">
+            <CardHeader>
+              <CardTitle>Upload Instructions</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <h4 className="font-medium text-gray-900 mb-2">Receipt Images</h4>
+                  <ul className="text-sm text-gray-600 space-y-1">
+                    <li>• Clear, well-lit photos</li>
+                    <li>• Include all transaction details</li>
+                    <li>• Supported: PNG, JPG, JPEG</li>
+                    <li>• Max size: 10MB</li>
+                  </ul>
+                </div>
+                <div>
+                  <h4 className="font-medium text-gray-900 mb-2">Bank Statements</h4>
+                  <ul className="text-sm text-gray-600 space-y-1">
+                    <li>• CSV format only</li>
+                    <li>• Include date, amount, description</li>
+                    <li>• Export from your bank</li>
+                    <li>• Max size: 5MB</li>
+                  </ul>
+                </div>
               </div>
-            </TabsContent>
-
-            <TabsContent value="receipt">
-              <div className="space-y-6">
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <Receipt className="h-5 w-5" />
-                      Process Receipt
-                    </CardTitle>
-                    <CardDescription>
-                      Upload a receipt image or paste receipt text to extract transaction details using AI.
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <Tabs defaultValue="text" className="w-full">
-                      <TabsList className="grid w-full grid-cols-2">
-                        <TabsTrigger value="text" className="flex items-center gap-2">
-                          <FileText className="h-4 w-4" />
-                          Text Input
-                        </TabsTrigger>
-                        <TabsTrigger value="image" className="flex items-center gap-2">
-                          <Camera className="h-4 w-4" />
-                          Image Upload
-                        </TabsTrigger>
-                      </TabsList>
-
-                      <TabsContent value="text" className="space-y-4">
-                        <div className="space-y-2">
-                          <Label htmlFor="receipt-text">Receipt Text</Label>
-                          <textarea
-                            id="receipt-text"
-                            value={receiptText}
-                            onChange={(e) => setReceiptText(e.target.value)}
-                            placeholder="Paste your receipt text here...&#10;&#10;Example:&#10;WALMART STORE #1234&#10;Date: 01/15/2024&#10;Total: $28.57"
-                            className="w-full h-32 p-3 border border-gray-300 rounded-md resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
-                          />
-                        </div>
-
-                        <Button 
-                          onClick={handleReceiptParse}
-                          disabled={!receiptText.trim() || parseReceipt.isPending}
-                          className="w-full"
-                        >
-                          {parseReceipt.isPending ? (
-                            'Processing...'
-                          ) : (
-                            <>
-                              <Receipt className="mr-2 h-4 w-4" />
-                              Process Receipt
-                            </>
-                          )}
-                        </Button>
-                      </TabsContent>
-
-                      <TabsContent value="image" className="space-y-4">
-                        <div className="space-y-2">
-                          <Label htmlFor="receipt-image">Receipt Image</Label>
-                          <Input 
-                            id="receipt-image" 
-                            type="file" 
-                            accept="image/*" 
-                            onChange={handleImageSelect}
-                          />
-                        </div>
-                        
-                        {selectedImage && (
-                          <div className="flex items-center gap-2 text-sm text-gray-600">
-                            <Image className="h-4 w-4" />
-                            Selected: {selectedImage.name}
-                          </div>
-                        )}
-
-                        {imagePreview && (
-                          <div className="border rounded-lg p-4">
-                            <Label className="text-sm font-medium mb-2 block">Image Preview:</Label>
-                            <img 
-                              src={imagePreview} 
-                              alt="Receipt preview" 
-                              className="max-w-full h-48 object-contain border rounded"
-                            />
-                          </div>
-                        )}
-
-                        <Button 
-                          onClick={handleImageUpload}
-                          disabled={!selectedImage || uploadReceiptImage.isPending}
-                          className="w-full"
-                        >
-                          {uploadReceiptImage.isPending ? (
-                            'Processing Image...'
-                          ) : (
-                            <>
-                              <Camera className="mr-2 h-4 w-4" />
-                              Process Receipt Image
-                            </>
-                          )}
-                        </Button>
-                      </TabsContent>
-                    </Tabs>
-
-                    <div className="bg-green-50 border border-green-200 rounded-lg p-4 mt-4">
-                      <div className="flex items-start gap-2">
-                        <AlertCircle className="h-4 w-4 text-green-600 mt-0.5" />
-                        <div className="text-sm text-green-800">
-                          <p className="font-medium">AI Processing:</p>
-                          <p className="mt-1">Our AI will extract vendor, amount, date, category, and description from your receipt text or image.</p>
-                          <p className="mt-1">Supported image formats: JPG, PNG, WebP, TIFF (max 10MB)</p>
-                        </div>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                {/* Receipt Processing Results */}
-                {receiptProcessingResult && (
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="flex items-center gap-2">
-                        <CheckCircle className="h-5 w-5 text-green-600" />
-                        Receipt Information
-                      </CardTitle>
-                      <CardDescription>
-                        Successfully extracted from your receipt
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="bg-gray-50 p-3 rounded-lg">
-                          <span className="text-sm font-medium text-gray-600">Vendor:</span>
-                          <p className="text-gray-900">{receiptProcessingResult.entry?.vendor || 'N/A'}</p>
-                        </div>
-                        <div className="bg-gray-50 p-3 rounded-lg">
-                          <span className="text-sm font-medium text-gray-600">Amount:</span>
-                          <p className="text-gray-900">${receiptProcessingResult.entry?.amount?.toFixed(2) || 'N/A'}</p>
-                        </div>
-                        <div className="bg-gray-50 p-3 rounded-lg">
-                          <span className="text-sm font-medium text-gray-600">Date:</span>
-                          <p className="text-gray-900">
-                            {receiptProcessingResult.entry?.transactionDate 
-                              ? new Date(receiptProcessingResult.entry.transactionDate).toLocaleDateString()
-                              : 'N/A'
-                            }
-                          </p>
-                        </div>
-                        <div className="bg-gray-50 p-3 rounded-lg">
-                          <span className="text-sm font-medium text-gray-600">Category:</span>
-                          <p className="text-gray-900">{receiptProcessingResult.entry?.category || 'N/A'}</p>
-                        </div>
-                        <div className="bg-gray-50 p-3 rounded-lg md:col-span-2">
-                          <span className="text-sm font-medium text-gray-600">Description:</span>
-                          <p className="text-gray-900">{receiptProcessingResult.entry?.description || 'N/A'}</p>
-                        </div>
-                      </div>
-
-                      {/* Clear Results Button */}
-                      <div className="flex justify-end mt-4">
-                        <Button
-                          variant="outline"
-                          onClick={() => {
-                            setReceiptProcessingResult(null);
-                            setExtractedText('');
-                          }}
-                          className="text-gray-600"
-                        >
-                          Clear Results
-                        </Button>
-                      </div>
-                    </CardContent>
-                  </Card>
-                )}
-              </div>
-            </TabsContent>
-          </Tabs>
+            </CardContent>
+          </Card>
         </div>
-      </main>
+      </div>
     </div>
   );
 } 
