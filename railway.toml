@@ -3,7 +3,7 @@ builder = "nixpacks"
 buildCommand = "cd packages/backend && npm install && npm run build"
 
 [deploy]
-startCommand = "cd packages/backend && npm start"
+startCommand = "cd packages/backend && npx prisma db push && npm start"
 healthcheckPath = "/health"
 healthcheckTimeout = 100
 restartPolicyType = "ON_FAILURE"
