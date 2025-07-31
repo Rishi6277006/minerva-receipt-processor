@@ -3,8 +3,5 @@
   "buildCommand": "pnpm install && pnpm build:frontend",
   "outputDirectory": "apps/frontend/.next",
   "installCommand": "pnpm install",
-  "framework": "nextjs",
-  "env": {
-    "NEXT_PUBLIC_BACKEND_URL": "@backend-url"
-  }
+  "framework": "nextjs"
 } 

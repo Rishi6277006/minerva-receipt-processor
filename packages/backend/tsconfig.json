@@ -20,6 +20,11 @@
   "exclude": [
     "node_modules",
     "dist",
-    "**/*.test.ts"
+    "**/*.test.ts",
+    "**/*.tsx",
+    "**/*.jsx",
+    "apps/**/*",
+    "components/**/*",
+    "utils/**/*"
   ]
 } 

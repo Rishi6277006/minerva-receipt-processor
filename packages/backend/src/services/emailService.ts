@@ -1,6 +1,6 @@
 import Imap from 'imap';
 import { simpleParser } from 'mailparser';
-import * as pdf from 'pdf-parse';
+import pdf from 'pdf-parse';
 import { parseReceiptWithOpenAI } from './openaiService';
 import { PrismaClient } from '@prisma/client';
 
