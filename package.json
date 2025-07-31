@@ -8,7 +8,6 @@
     "build": "pnpm --filter @minerva/backend build && pnpm --filter frontend build",
     "build:frontend": "pnpm --filter frontend build",
     "build:backend": "pnpm --filter @minerva/backend build",
-    "vercel-build": "cd apps/frontend && pnpm install && pnpm build",
     "start": "concurrently \"pnpm --filter @minerva/backend start\" \"pnpm --filter frontend start\"",
     "db:generate": "pnpm --filter @minerva/backend db:generate",
     "db:push": "pnpm --filter @minerva/backend db:push",
