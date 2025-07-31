@@ -47,7 +47,7 @@ export default function UploadPage() {
         // Convert image to base64 for API
         const base64 = await fileToBase64(selectedFile);
         
-        // Call backend API for image processing
+        // Call backend API for image processing using tRPC format
         const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:3001';
         const response = await fetch(`${backendUrl}/trpc/receipt.uploadImage`, {
           method: 'POST',
@@ -55,31 +55,39 @@ export default function UploadPage() {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            imageData: base64,
-            fileName: selectedFile.name
+            json: {
+              imageData: base64,
+              filename: selectedFile.name
+            }
           })
         });
 
+        console.log('Image upload response status:', response.status);
+        
         if (!response.ok) {
-          throw new Error('Failed to process image');
+          const errorText = await response.text();
+          console.error('Image upload error response:', errorText);
+          throw new Error(`Failed to process image: ${errorText}`);
         }
 
         const result = await response.json();
+        console.log('Image upload result:', result);
         
         if (result.error) {
-          throw new Error(result.error);
+          throw new Error(result.error.message || 'Processing failed');
         }
 
         // Use the actual processed data from backend
         const processedData = result.result?.data || result.data;
         
-        if (processedData) {
+        if (processedData && processedData.success) {
+          const receiptData = processedData.entry || processedData.parsedReceipt || processedData;
           const receiptResult: ProcessingResult = {
-            vendor: processedData.vendor || 'Unknown Vendor',
-            amount: processedData.amount || 0,
-            date: processedData.transactionDate || new Date().toISOString().split('T')[0],
-            category: processedData.category || 'Uncategorized',
-            description: processedData.description || 'Receipt processing'
+            vendor: receiptData.vendor || 'Unknown Vendor',
+            amount: receiptData.amount || 0,
+            date: receiptData.transactionDate || new Date().toISOString().split('T')[0],
+            category: receiptData.category || 'Uncategorized',
+            description: receiptData.description || 'Receipt processing'
           };
           
           setProcessingResult(receiptResult);
@@ -101,7 +109,7 @@ export default function UploadPage() {
         // Read CSV file content
         const csvContent = await fileToText(selectedFile);
         
-        // Call backend API for CSV processing
+        // Call backend API for CSV processing using tRPC format
         const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:3001';
         const response = await fetch(`${backendUrl}/trpc/bank.uploadStatement`, {
           method: 'POST',
@@ -109,18 +117,21 @@ export default function UploadPage() {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            csvData: csvContent
+            json: {
+              csvData: csvContent
+            }
           })
         });
 
         if (!response.ok) {
-          throw new Error('Failed to process CSV');
+          const errorText = await response.text();
+          throw new Error(`Failed to process CSV: ${errorText}`);
         }
 
         const result = await response.json();
         
         if (result.error) {
-          throw new Error(result.error);
+          throw new Error(result.error.message || 'Processing failed');
         }
 
         // Use the actual processed data from backend
