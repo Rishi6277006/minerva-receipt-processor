@@ -1,0 +1,55 @@
+# Frontend files (deployed separately to Vercel)
+src/
+public/
+.next/
+node_modules/
+package.json
+package-lock.json
+next.config.ts
+tsconfig.json
+postcss.config.mjs
+tailwind.config.ts
+components.json
+eslint.config.mjs
+vercel.json
+.vercelignore
+
+# Development files
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Build artifacts
+out/
+dist/
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Test files
+coverage/
+.nyc_output/
+
+# Temporary files
+*.tmp
+*.temp
+
+# Prisma files (backend has its own)
+prisma/
+
+# Generated files
+generated/ 

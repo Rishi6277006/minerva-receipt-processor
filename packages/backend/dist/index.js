@@ -42,7 +42,7 @@ const cors_1 = __importDefault(require("cors"));
 const router_1 = require("./router");
 const context_1 = require("./context");
 const client_1 = require("@prisma/client");
-// import { emailService } from './services/emailService';
+const emailService_1 = require("./services/emailService");
 const app = (0, express_1.default)();
 const prisma = new client_1.PrismaClient();
 app.use((0, cors_1.default)());
@@ -51,6 +51,14 @@ app.use('/trpc', trpcExpress.createExpressMiddleware({
     router: router_1.appRouter,
     createContext: context_1.createContext,
 }));
+// Health check endpoint
+app.get('/health', (req, res) => {
+    res.json({
+        status: 'ok',
+        timestamp: new Date().toISOString(),
+        emailService: process.env.EMAIL_USER ? 'enabled' : 'disabled'
+    });
+});
 // Function to seed database with diverse dummy data
 async function seedDatabase() {
     try {
@@ -240,16 +248,18 @@ app.listen(PORT, async () => {
     // Seed database with dummy data
     await seedDatabase();
     // Start email monitoring if email credentials are provided
-    // if (process.env.EMAIL_USER && process.env.EMAIL_PASSWORD) {
-    //   try {
-    //     console.log('Starting email monitoring service...');
-    //     await emailService.startMonitoring();
-    //     console.log('Email monitoring service started successfully');
-    //   } catch (error) {
-    //     console.error('Failed to start email monitoring:', error);
-    //   }
-    // } else {
-    //   console.log('Email monitoring disabled - no email credentials provided');
-    // }
+    if (process.env.EMAIL_USER && process.env.EMAIL_PASS) {
+        try {
+            console.log('Starting email monitoring service...');
+            await emailService_1.emailService.startMonitoring();
+            console.log('Email monitoring service started successfully');
+        }
+        catch (error) {
+            console.error('Failed to start email monitoring:', error);
+        }
+    }
+    else {
+        console.log('Email monitoring disabled - no email credentials provided');
+    }
 });
 //# sourceMappingURL=index.js.map
