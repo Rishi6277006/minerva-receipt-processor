@@ -1,73 +1,93 @@
-# Deployment Guide
-
-## Backend Deployment (Railway)
-
-### Step 1: Deploy to Railway
-1. Go to [Railway.app](https://railway.app) and sign in with GitHub
-2. Click "New Project" → "Deploy from GitHub repo"
-3. Select your repository: `minerva-receipt-processor`
-4. Configure:
-   - **Root Directory**: `packages/backend`
-   - **Build Command**: `pnpm install && pnpm build`
-   - **Start Command**: `pnpm start`
-
-### Step 2: Add PostgreSQL Database
-1. In Railway dashboard, click "New" → "Database" → "PostgreSQL"
-2. Railway will automatically set `DATABASE_URL` environment variable
-
-### Step 3: Add Environment Variables
-In Railway dashboard, add these environment variables:
-```
-DATABASE_URL=your_postgresql_url (auto-set by Railway)
-PORT=3001
-NODE_ENV=production
-```
-
-### Step 4: Deploy and Get URL
-1. Railway will automatically deploy your backend
-2. Copy the generated URL (e.g., `https://your-app.railway.app`)
+# 🚀 Deployment Guide
 
 ## Frontend Deployment (Vercel)
 
-### Step 1: Deploy to Vercel
-1. Go to [Vercel.com](https://vercel.com) and sign in
-2. Click "New Project" → Import your GitHub repository
-3. Configure:
-   - **Framework**: Next.js (auto-detected)
-   - **Root Directory**: `apps/frontend`
-   - **Build Command**: `pnpm build:frontend`
-   - **Output Directory**: `.next`
+### ✅ Current Status: READY TO DEPLOY
 
-### Step 2: Add Environment Variable
-1. In Vercel dashboard, go to Settings → Environment Variables
-2. Add:
-   - **Name**: `NEXT_PUBLIC_BACKEND_URL`
-   - **Value**: Your Railway backend URL (e.g., `https://your-app.railway.app`)
-   - **Environment**: Production, Preview, Development
+1. **Go to Vercel Dashboard**: https://vercel.com/dashboard
+2. **Import Repository**: 
+   - Click "New Project"
+   - Import from GitHub: `Rishi6277006/minerva-receipt-processor`
+   - Root Directory: `.` (root)
+   - Framework Preset: Next.js
+   - Build Command: `npm run build`
+   - Output Directory: `.next`
 
-### Step 3: Redeploy
-1. Go to Deployments tab
-2. Click "Redeploy" to apply the environment variable
+3. **Environment Variables** (Add after backend is deployed):
+   ```
+   NEXT_PUBLIC_BACKEND_URL=https://your-railway-backend-url.railway.app
+   ```
 
-## Testing the Deployment
+4. **Deploy**: Click "Deploy"
 
-1. **Test Backend**: Visit your Railway URL + `/trpc/ledger.getAll`
-2. **Test Frontend**: Visit your Vercel URL
-3. **Test Connection**: The frontend should now connect to your backend
+## Backend Deployment (Railway)
 
-## Troubleshooting
+### ✅ Current Status: READY TO DEPLOY
 
-### Backend Issues
-- Check Railway logs for build errors
-- Ensure `DATABASE_URL` is set correctly
-- Verify Prisma migrations run successfully
+1. **Go to Railway Dashboard**: https://railway.app/dashboard
+2. **Create New Project**:
+   - Click "New Project"
+   - Select "Deploy from GitHub repo"
+   - Choose: `Rishi6277006/minerva-receipt-processor`
+   - Set Root Directory: `packages/backend`
 
-### Frontend Issues
-- Check Vercel build logs
-- Ensure `NEXT_PUBLIC_BACKEND_URL` is set correctly
-- Verify CORS is configured properly
+3. **Environment Variables** (Add these):
+   ```
+   DATABASE_URL=your-postgresql-url
+   OPENAI_API_KEY=your-openai-key (optional)
+   EMAIL_HOST=your-email-host (optional)
+   EMAIL_USER=your-email-user (optional)
+   EMAIL_PASS=your-email-password (optional)
+   ```
 
-### Connection Issues
-- Check if backend URL is accessible
-- Verify environment variables are set
-- Check browser console for CORS errors 
+4. **Deploy**: Railway will automatically build and deploy
+
+## 🔗 Connect Frontend to Backend
+
+1. **Get Backend URL**: After Railway deployment, copy the generated URL
+2. **Update Vercel**: Add environment variable in Vercel dashboard:
+   ```
+   NEXT_PUBLIC_BACKEND_URL=https://your-railway-backend-url.railway.app
+   ```
+3. **Redeploy Frontend**: Trigger a new deployment in Vercel
+
+## 📋 Current Features
+
+### ✅ Working Locally:
+- Beautiful financial dashboard
+- Receipt upload and processing
+- Bank statement upload
+- Transaction comparison
+- Ledger management
+- Modern UI with animations
+
+### ✅ Ready for Deployment:
+- Frontend: Next.js with Tailwind CSS
+- Backend: Node.js with Express and tRPC
+- Database: PostgreSQL (Railway)
+- File uploads: CSV and image processing
+- AI integration: OpenAI for receipt parsing
+
+## 🎯 Next Steps
+
+1. **Deploy Backend to Railway**
+2. **Deploy Frontend to Vercel**
+3. **Connect them with environment variables**
+4. **Test all functionality**
+
+## 🚨 Troubleshooting
+
+### If Vercel shows 404:
+- Check Root Directory setting (should be `.`)
+- Verify `package.json` is in root
+- Check build logs for errors
+
+### If Backend fails to deploy:
+- Check Railway logs
+- Verify `packages/backend/package.json` exists
+- Check environment variables
+
+### If Frontend can't connect to Backend:
+- Verify `NEXT_PUBLIC_BACKEND_URL` is set correctly
+- Check CORS settings in backend
+- Test backend URL directly 
