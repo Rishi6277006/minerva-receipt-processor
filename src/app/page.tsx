@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -24,7 +23,6 @@ import {
   Home,
   Music,
   Utensils,
-  Target,
   ArrowUpRight,
   ArrowDownRight,
   Sparkles,
@@ -37,29 +35,6 @@ import {
   Star
 } from 'lucide-react';
 
-// Mock data for demonstration
-const mockLedgerData = [
-  { id: '1', vendor: 'Starbucks Coffee', amount: 12.50, category: 'Food & Beverage', transactionDate: '2024-01-15', description: 'Venti Caramel Macchiato' },
-  { id: '2', vendor: 'Amazon.com', amount: 89.99, category: 'Shopping', transactionDate: '2024-01-16', description: 'Wireless headphones' },
-  { id: '3', vendor: 'Shell Gas Station', amount: 45.67, category: 'Transportation', transactionDate: '2024-01-17', description: 'Gas fill-up' },
-  { id: '4', vendor: 'Walmart', amount: 156.78, category: 'Groceries', transactionDate: '2024-01-18', description: 'Weekly shopping' },
-  { id: '5', vendor: 'Netflix', amount: 15.99, category: 'Entertainment', transactionDate: '2024-01-19', description: 'Monthly subscription' },
-  { id: '6', vendor: 'Home Depot', amount: 234.56, category: 'Home', transactionDate: '2024-01-20', description: 'Garden supplies' },
-  { id: '7', vendor: 'Uber', amount: 23.45, category: 'Transportation', transactionDate: '2024-01-21', description: 'Ride to airport' },
-  { id: '8', vendor: 'Spotify', amount: 9.99, category: 'Entertainment', transactionDate: '2024-01-22', description: 'Premium subscription' },
-];
-
-const mockBankData = [
-  { id: '1', description: 'STARBUCKS COFFEE', amount: 12.50, type: 'DEBIT', transactionDate: '2024-01-15' },
-  { id: '2', description: 'AMAZON.COM', amount: 89.99, type: 'DEBIT', transactionDate: '2024-01-16' },
-  { id: '3', description: 'SHELL GAS STATION', amount: 45.67, type: 'DEBIT', transactionDate: '2024-01-17' },
-  { id: '4', description: 'WALMART SUPERCENTER', amount: 156.78, type: 'DEBIT', transactionDate: '2024-01-18' },
-  { id: '5', description: 'SALARY DEPOSIT', amount: 2500.00, type: 'CREDIT', transactionDate: '2024-01-25' },
-  { id: '6', description: 'SPOTIFY USA', amount: 9.99, type: 'DEBIT', transactionDate: '2024-01-22' },
-  { id: '7', description: 'UBER *TRIP', amount: 23.45, type: 'DEBIT', transactionDate: '2024-01-21' },
-  { id: '8', description: 'HOME DEPOT', amount: 234.56, type: 'DEBIT', transactionDate: '2024-01-20' },
-];
-
 export default function Dashboard() {
   const [totalSpent, setTotalSpent] = useState(0);
   const [totalIncome, setTotalIncome] = useState(0);
@@ -67,39 +42,68 @@ export default function Dashboard() {
   const [monthlyTrend, setMonthlyTrend] = useState<Record<string, number>>({});
   const [isLoading, setIsLoading] = useState(true);
   const [selectedTimeframe, setSelectedTimeframe] = useState('30d');
+  const [ledgerData, setLedgerData] = useState<any[]>([]);
+  const [bankData, setBankData] = useState<any[]>([]);
 
   useEffect(() => {
-    // Simulate loading
-    const timer = setTimeout(() => {
-      setIsLoading(false);
-    }, 1000);
+    // Fetch real data from backend
+    const fetchData = async () => {
+      try {
+        // Fetch ledger data
+        const ledgerResponse = await fetch('/api/ledger');
+        const ledgerResult = await ledgerResponse.json();
+        setLedgerData(ledgerResult.data || []);
 
-    // Calculate total spent from ledger
-    const spent = mockLedgerData.reduce((sum: number, entry: any) => sum + entry.amount, 0);
-    setTotalSpent(spent);
+        // Fetch bank data
+        const bankResponse = await fetch('/api/bank');
+        const bankResult = await bankResponse.json();
+        setBankData(bankResult.data || []);
 
-    // Calculate total income from bank (credits)
-    const income = mockBankData
-      .filter((tx: any) => tx.type === 'CREDIT')
-      .reduce((sum: number, tx: any) => sum + tx.amount, 0);
-    setTotalIncome(income);
+        // Calculate totals
+        const spent = (ledgerResult.data || []).reduce((sum: number, entry: any) => sum + entry.amount, 0);
+        setTotalSpent(spent);
 
-    // Category breakdown
-    const categories: Record<string, number> = {};
-    mockLedgerData.forEach((entry: any) => {
-      categories[entry.category] = (categories[entry.category] || 0) + entry.amount;
-    });
-    setCategoryBreakdown(categories);
+        const income = (bankResult.data || [])
+          .filter((tx: any) => tx.type === 'CREDIT')
+          .reduce((sum: number, tx: any) => sum + tx.amount, 0);
+        setTotalIncome(income);
 
-    // Monthly trend
-    const monthly: Record<string, number> = {};
-    mockLedgerData.forEach((entry: any) => {
-      const month = new Date(entry.transactionDate).toLocaleDateString('en-US', { month: 'short' });
-      monthly[month] = (monthly[month] || 0) + entry.amount;
-    });
-    setMonthlyTrend(monthly);
+        // Category breakdown
+        const categories: Record<string, number> = {};
+        (ledgerResult.data || []).forEach((entry: any) => {
+          categories[entry.category] = (categories[entry.category] || 0) + entry.amount;
+        });
+        setCategoryBreakdown(categories);
 
-    return () => clearTimeout(timer);
+        // Monthly trend
+        const monthly: Record<string, number> = {};
+        (ledgerResult.data || []).forEach((entry: any) => {
+          const month = new Date(entry.transactionDate).toLocaleDateString('en-US', { month: 'short' });
+          monthly[month] = (monthly[month] || 0) + entry.amount;
+        });
+        setMonthlyTrend(monthly);
+
+      } catch (error) {
+        console.error('Error fetching data:', error);
+        // Fallback to mock data if backend is not available
+        setLedgerData([
+          { id: '1', vendor: 'Starbucks Coffee', amount: 12.50, category: 'Food & Beverage', transactionDate: '2024-01-15', description: 'Venti Caramel Macchiato' },
+          { id: '2', vendor: 'Amazon.com', amount: 89.99, category: 'Shopping', transactionDate: '2024-01-16', description: 'Wireless headphones' },
+          { id: '3', vendor: 'Shell Gas Station', amount: 45.67, category: 'Transportation', transactionDate: '2024-01-17', description: 'Gas fill-up' },
+        ]);
+        setBankData([
+          { id: '1', description: 'STARBUCKS COFFEE', amount: 12.50, type: 'DEBIT', transactionDate: '2024-01-15' },
+          { id: '2', description: 'AMAZON.COM', amount: 89.99, type: 'DEBIT', transactionDate: '2024-01-16' },
+          { id: '3', description: 'SALARY DEPOSIT', amount: 2500.00, type: 'CREDIT', transactionDate: '2024-01-25' },
+        ]);
+        setTotalSpent(148.16);
+        setTotalIncome(2500.00);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchData();
   }, []);
 
   const getCategoryIcon = (category: string) => {
@@ -259,7 +263,7 @@ export default function Dashboard() {
                   {Math.abs(spendingChange).toFixed(1)}% from last month
                 </p>
               </div>
-              <p className="text-xs text-slate-500 mt-1">From {mockLedgerData.length} receipts</p>
+              <p className="text-xs text-slate-500 mt-1">From {ledgerData.length} receipts</p>
             </CardContent>
           </Card>
 
@@ -350,7 +354,7 @@ export default function Dashboard() {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
-                    {mockLedgerData.slice(0, 5).map((entry) => {
+                    {ledgerData.slice(0, 5).map((entry) => {
                       const IconComponent = getCategoryIcon(entry.category);
                       return (
                         <div key={entry.id} className="flex items-center justify-between p-3 bg-slate-50 rounded-lg hover:bg-slate-100 transition-all duration-200 hover:shadow-md group">
@@ -387,7 +391,7 @@ export default function Dashboard() {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
-                    {mockBankData.slice(0, 5).map((transaction) => (
+                    {bankData.slice(0, 5).map((transaction) => (
                       <div key={transaction.id} className="flex items-center justify-between p-3 bg-slate-50 rounded-lg hover:bg-slate-100 transition-all duration-200 hover:shadow-md group">
                         <div className="flex items-center gap-3">
                           <div className={`p-2 rounded-lg ${transaction.type === 'CREDIT' ? 'bg-green-500' : 'bg-red-500'} group-hover:scale-110 transition-transform`}>
@@ -516,7 +520,6 @@ export default function Dashboard() {
                   {Object.entries(categoryBreakdown).map(([category, amount]) => {
                     const IconComponent = getCategoryIcon(category);
                     const percentage = ((amount / totalSpent) * 100).toFixed(1);
-                    const angle = (parseFloat(percentage) / 100) * 360;
                     
                     return (
                       <div key={category} className="p-6 bg-slate-50 rounded-lg hover:bg-slate-100 transition-all duration-300 hover:shadow-lg group">

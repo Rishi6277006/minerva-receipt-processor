@@ -56,12 +56,16 @@ export function Navigation() {
 
           {/* User Menu */}
           <div className="hidden md:flex items-center space-x-4">
-            <Button variant="outline" size="sm">
-              Login
-            </Button>
-            <Button size="sm">
-              Sign Up
-            </Button>
+            <Link href="/login">
+              <Button variant="outline" size="sm">
+                Login
+              </Button>
+            </Link>
+            <Link href="/signup">
+              <Button size="sm">
+                Sign Up
+              </Button>
+            </Link>
           </div>
 
           {/* Mobile menu button */}
@@ -100,12 +104,16 @@ export function Navigation() {
                 </Link>
               ))}
               <div className="pt-4 space-y-2">
-                <Button variant="outline" className="w-full">
-                  Login
-                </Button>
-                <Button className="w-full">
-                  Sign Up
-                </Button>
+                <Link href="/login" className="w-full">
+                  <Button variant="outline" className="w-full">
+                    Login
+                  </Button>
+                </Link>
+                <Link href="/signup" className="w-full">
+                  <Button className="w-full">
+                    Sign Up
+                  </Button>
+                </Link>
               </div>
             </div>
           </div>

@@ -4,7 +4,7 @@ import cors from 'cors';
 import { appRouter } from './router';
 import { createContext } from './context';
 import { PrismaClient } from '@prisma/client';
-// import { emailService } from './services/emailService';
+import { emailService } from './services/emailService';
 
 const app = express();
 const prisma = new PrismaClient();
@@ -19,6 +19,15 @@ app.use(
     createContext,
   }),
 );
+
+// Health check endpoint
+app.get('/health', (req, res) => {
+  res.json({ 
+    status: 'ok', 
+    timestamp: new Date().toISOString(),
+    emailService: process.env.EMAIL_USER ? 'enabled' : 'disabled'
+  });
+});
 
 // Function to seed database with diverse dummy data
 async function seedDatabase() {
@@ -220,15 +229,15 @@ app.listen(PORT, async () => {
   await seedDatabase();
   
   // Start email monitoring if email credentials are provided
-  // if (process.env.EMAIL_USER && process.env.EMAIL_PASSWORD) {
-  //   try {
-  //     console.log('Starting email monitoring service...');
-  //     await emailService.startMonitoring();
-  //     console.log('Email monitoring service started successfully');
-  //   } catch (error) {
-  //     console.error('Failed to start email monitoring:', error);
-  //   }
-  // } else {
-  //   console.log('Email monitoring disabled - no email credentials provided');
-  // }
+  if (process.env.EMAIL_USER && process.env.EMAIL_PASS) {
+    try {
+      console.log('Starting email monitoring service...');
+      await emailService.startMonitoring();
+      console.log('Email monitoring service started successfully');
+    } catch (error) {
+      console.error('Failed to start email monitoring:', error);
+    }
+  } else {
+    console.log('Email monitoring disabled - no email credentials provided');
+  }
 }); 
