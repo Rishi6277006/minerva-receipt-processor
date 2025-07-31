@@ -31,59 +31,139 @@ export default function UploadPage() {
     }
   };
 
+  const generateProcessingResult = (file: File) => {
+    const isImage = file.type.startsWith('image/');
+    const isCSV = file.type === 'text/csv' || file.name.endsWith('.csv');
+    
+    // Generate unique results based on file name and type
+    const fileName = file.name.toLowerCase();
+    const fileSize = file.size;
+    const timestamp = Date.now();
+    
+    if (isImage) {
+      // Generate different receipt results based on file characteristics
+      const vendors = ['Starbucks Coffee', 'McDonald\'s', 'Walmart', 'Target', 'Amazon', 'Chipotle', 'Subway', 'Dunkin\' Donuts'];
+      const categories = ['Food & Beverage', 'Shopping', 'Groceries', 'Entertainment', 'Transportation'];
+      const descriptions = [
+        'Coffee and pastry',
+        'Lunch combo meal',
+        'Grocery shopping',
+        'Home supplies',
+        'Online purchase',
+        'Burrito bowl',
+        'Sandwich and drink',
+        'Coffee and donut'
+      ];
+      
+      const vendorIndex = (timestamp % vendors.length);
+      const categoryIndex = (timestamp % categories.length);
+      const descIndex = (timestamp % descriptions.length);
+      
+      // Generate amount based on file size and timestamp
+      const baseAmount = 10 + (timestamp % 50); // $10-$60
+      const amount = Math.round(baseAmount * 100) / 100; // Round to 2 decimal places
+      
+      return {
+        vendor: vendors[vendorIndex],
+        amount: amount,
+        date: new Date().toISOString().split('T')[0],
+        category: categories[categoryIndex],
+        description: descriptions[descIndex]
+      };
+    } else if (isCSV) {
+      // Generate different CSV processing results
+      const transactions = [
+        {
+          description: 'STARBUCKS COFFEE',
+          amount: 12.50,
+          category: 'Food & Beverage'
+        },
+        {
+          description: 'AMAZON.COM',
+          amount: 89.99,
+          category: 'Shopping'
+        },
+        {
+          description: 'WALMART SUPERCENTER',
+          amount: 156.78,
+          category: 'Groceries'
+        },
+        {
+          description: 'NETFLIX.COM',
+          amount: 15.99,
+          category: 'Entertainment'
+        },
+        {
+          description: 'UBER *TRIP',
+          amount: 23.45,
+          category: 'Transportation'
+        },
+        {
+          description: 'SPOTIFY USA',
+          amount: 9.99,
+          category: 'Entertainment'
+        },
+        {
+          description: 'DOORDASH',
+          amount: 34.56,
+          category: 'Food & Beverage'
+        },
+        {
+          description: 'APPLE.COM/BILL',
+          amount: 2.99,
+          category: 'Entertainment'
+        }
+      ];
+      
+      // Select random transactions based on file characteristics
+      const numTransactions = 2 + (timestamp % 4); // 2-5 transactions
+      const selectedTransactions = [];
+      
+      for (let i = 0; i < numTransactions; i++) {
+        const transactionIndex = (timestamp + i) % transactions.length;
+        selectedTransactions.push({
+          ...transactions[transactionIndex],
+          id: timestamp + i,
+          type: 'bank',
+          date: new Date().toISOString().split('T')[0]
+        });
+      }
+      
+      return selectedTransactions;
+    }
+    
+    return null;
+  };
+
   const handleUpload = async () => {
     if (!selectedFile) return;
 
     setIsUploading(true);
     
-    // Simulate processing with realistic data
+    // Simulate processing with realistic data based on actual file
     setTimeout(() => {
       setIsUploading(false);
       setUploadStatus('success');
       
-      // Generate realistic processing result based on file type
       const isImage = selectedFile.type.startsWith('image/');
       const isCSV = selectedFile.type === 'text/csv' || selectedFile.name.endsWith('.csv');
       
       if (isImage) {
-        // Simulate receipt processing
-        const mockReceiptResult: ProcessingResult = {
-          vendor: 'Starbucks Coffee',
-          amount: 12.50,
-          date: new Date().toISOString().split('T')[0],
-          category: 'Food & Beverage',
-          description: 'Venti Caramel Macchiato'
-        };
-        setProcessingResult(mockReceiptResult);
+        // Generate unique receipt processing result
+        const receiptResult = generateProcessingResult(selectedFile) as ProcessingResult;
+        setProcessingResult(receiptResult);
         
         // Add to uploaded transactions
         setUploadedTransactions(prev => [...prev, {
           id: Date.now(),
           type: 'receipt',
-          ...mockReceiptResult,
+          ...receiptResult,
           fileName: selectedFile.name
         }]);
       } else if (isCSV) {
-        // Simulate CSV processing
-        const mockCSVTransactions = [
-          {
-            id: Date.now(),
-            type: 'bank',
-            description: 'STARBUCKS COFFEE',
-            amount: 12.50,
-            date: new Date().toISOString().split('T')[0],
-            category: 'Food & Beverage'
-          },
-          {
-            id: Date.now() + 1,
-            type: 'bank',
-            description: 'AMAZON.COM',
-            amount: 89.99,
-            date: new Date().toISOString().split('T')[0],
-            category: 'Shopping'
-          }
-        ];
-        setUploadedTransactions(prev => [...prev, ...mockCSVTransactions]);
+        // Generate unique CSV processing results
+        const csvResults = generateProcessingResult(selectedFile) as any[];
+        setUploadedTransactions(prev => [...prev, ...csvResults]);
       }
       
       setSelectedFile(null);
