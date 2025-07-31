@@ -1,6 +1,12 @@
 # Backend files (deployed separately to Railway)
-packages/backend/
 packages/
+packages/backend/
+packages/backend/src/
+packages/backend/prisma/
+packages/backend/package.json
+packages/backend/tsconfig.json
+packages/backend/railway.json
+packages/backend/.dockerignore
 
 # Development files
 node_modules/
@@ -36,4 +42,12 @@ coverage/
 
 # Temporary files
 *.tmp
-*.temp 
+*.temp
+
+# Prisma files
+prisma/
+*.db
+*.sqlite
+
+# Generated files
+generated/ 
