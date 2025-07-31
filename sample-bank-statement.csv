@@ -1,0 +1,9 @@
+Date,Description,Amount,Type
+2024-01-15,Grocery Store,45.67,DEBIT
+2024-01-16,Gas Station,32.50,DEBIT
+2024-01-17,Restaurant,28.95,DEBIT
+2024-01-18,Online Purchase,89.99,DEBIT
+2024-01-19,Salary Deposit,2500.00,CREDIT
+2024-01-20,Utility Bill,156.78,DEBIT
+2024-01-21,Pharmacy,23.45,DEBIT
+2024-01-22,Coffee Shop,4.50,DEBIT 

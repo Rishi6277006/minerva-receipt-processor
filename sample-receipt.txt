@@ -1,0 +1,24 @@
+WALMART STORE #1234
+123 MAIN STREET
+CITY, STATE 12345
+
+Date: 01/15/2024
+Time: 14:30:25
+Receipt #: 123456789
+
+Items:
+1. MILK 2% GAL          $4.99
+2. BREAD WHOLE WHEAT     $3.49
+3. EGGS DOZEN            $2.99
+4. BANANAS 2LB           $1.99
+5. CHICKEN BREAST 2LB    $12.99
+
+Subtotal:               $26.45
+Tax:                    $2.12
+Total:                  $28.57
+
+Payment Method: Credit Card
+Card: **** **** **** 1234
+
+Thank you for shopping at Walmart!
+Please come again. 

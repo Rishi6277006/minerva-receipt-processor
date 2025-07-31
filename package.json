@@ -1,0 +1,22 @@
+{
+  "name": "minerva-receipt-processor",
+  "version": "1.0.0",
+  "description": "AI-powered receipt processing and bank statement comparison system",
+  "main": "index.js",
+  "scripts": {
+    "dev": "concurrently \"pnpm --filter @minerva/backend dev\" \"pnpm --filter frontend dev\"",
+    "build": "pnpm --filter @minerva/backend build && pnpm --filter frontend build",
+    "start": "concurrently \"pnpm --filter @minerva/backend start\" \"pnpm --filter frontend start\"",
+    "db:generate": "pnpm --filter @minerva/backend db:generate",
+    "db:push": "pnpm --filter @minerva/backend db:push",
+    "db:migrate": "pnpm --filter @minerva/backend db:migrate",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": ["minerva", "receipt", "processing", "ai", "bank", "comparison"],
+  "author": "",
+  "license": "ISC",
+  "packageManager": "pnpm@10.13.1",
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}

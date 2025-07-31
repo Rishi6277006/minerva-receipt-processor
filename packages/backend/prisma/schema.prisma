@@ -1,0 +1,41 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model LedgerEntry {
+  id              String    @id @default(uuid())
+  vendor          String
+  amount          Float
+  currency        String    @default("USD")
+  transactionDate DateTime  @map("transaction_date")
+  category        String? // Optional category
+  description     String? // Optional description from receipt
+  receiptUrl      String? // URL or path to the original PDF receipt
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+
+  @@map("ledger_entries")
+}
+
+model BankTransaction {
+  id              String    @id @default(uuid())
+  description     String
+  amount          Float
+  transactionDate DateTime  @map("transaction_date")
+  type            String? // e.g., DEBIT, CREDIT
+  sourceFile      String? // Name of the CSV file it originated from
+  createdAt       DateTime  @default(now()) @map("created_at")
+
+  @@map("bank_transactions")
+}

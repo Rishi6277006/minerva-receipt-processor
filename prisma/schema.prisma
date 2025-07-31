@@ -1,0 +1,35 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model LedgerEntry {
+  id              String    @id @default(uuid())
+  vendor          String
+  amount          Decimal   @db.Decimal(10, 2)
+  currency        String    @default("USD")
+  transactionDate DateTime  @map("transaction_date")
+  category        String? // Optional category
+  description     String? // Optional description from receipt
+  receiptUrl      String? // URL or path to the original PDF receipt
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+
+  @@map("ledger_entries")
+}
+
+model BankTransaction {
+  id              String    @id @default(uuid())
+  description     String
+  amount          Decimal   @db.Decimal(10, 2)
+  transactionDate DateTime  @map("transaction_date")
+  type            String? // e.g., DEBIT, CREDIT
+  sourceFile      String? // Name of the CSV file it originated from
+  createdAt       DateTime  @default(now()) @map("created_at")
+
+  @@map("bank_transactions")
+} 
