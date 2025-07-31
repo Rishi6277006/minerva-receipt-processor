@@ -55,14 +55,16 @@ export default function UploadPage() {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            json: {
-              imageData: base64,
-              filename: selectedFile.name
-            }
+            imageData: base64,
+            filename: selectedFile.name
           })
         });
 
         console.log('Image upload response status:', response.status);
+        console.log('Image upload request body:', JSON.stringify({
+          imageData: base64.substring(0, 50) + '...', // Log first 50 chars
+          filename: selectedFile.name
+        }));
         
         if (!response.ok) {
           const errorText = await response.text();
@@ -117,9 +119,7 @@ export default function UploadPage() {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            json: {
-              csvData: csvContent
-            }
+            csvData: csvContent
           })
         });
 
