@@ -4,28 +4,7 @@
   "outputDirectory": "apps/frontend/.next",
   "installCommand": "pnpm install",
   "framework": "nextjs",
-  "functions": {
-    "apps/frontend/.next/**/*.js": {
-      "maxDuration": 30
-    }
-  },
   "env": {
     "NEXT_PUBLIC_BACKEND_URL": "@backend-url"
-  },
-  "builds": [
-    {
-      "src": "apps/frontend/package.json",
-      "use": "@vercel/next"
-    }
-  ],
-  "routes": [
-    {
-      "src": "/api/(.*)",
-      "dest": "/api/$1"
-    },
-    {
-      "src": "/(.*)",
-      "dest": "/$1"
-    }
-  ]
+  }
 } 
