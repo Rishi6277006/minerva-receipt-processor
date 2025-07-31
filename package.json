@@ -6,6 +6,8 @@
   "scripts": {
     "dev": "concurrently \"pnpm --filter @minerva/backend dev\" \"pnpm --filter frontend dev\"",
     "build": "pnpm --filter @minerva/backend build && pnpm --filter frontend build",
+    "build:frontend": "pnpm --filter frontend build",
+    "build:backend": "pnpm --filter @minerva/backend build",
     "start": "concurrently \"pnpm --filter @minerva/backend start\" \"pnpm --filter frontend start\"",
     "db:generate": "pnpm --filter @minerva/backend db:generate",
     "db:push": "pnpm --filter @minerva/backend db:push",

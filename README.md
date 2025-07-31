@@ -13,57 +13,34 @@ A full-stack financial management application that automatically processes recei
 ### 🖥️ **Modern User Interface**
 - **Beautiful Dashboard**: Sleek, responsive design with glass morphism effects
 - **Interactive Visualizations**: Spending timeline, progress charts, and insights
-- **Real-time Updates**: Live data processing and updates
-- **Mobile Responsive**: Works perfectly on all devices
+- **Real-time Updates**: Live data synchronization across all components
+- **Mobile Responsive**: Optimized for all device sizes
 
-### 🏦 **Bank Statement Integration**
-- **CSV Upload**: Drag & drop bank statement file upload
-- **Transaction Parsing**: Extracts amounts, dates, and descriptions
-- **Smart Matching**: Compares ledger vs bank transactions with intelligent algorithms
+### 🏦 **Bank Statement Management**
+- **CSV Upload**: Drag-and-drop bank statement upload
+- **Smart Parsing**: Automatic transaction extraction and categorization
+- **Comparison Engine**: Intelligent matching between ledger and bank transactions
+- **Reconciliation Tools**: Clear visualization of matched and unmatched transactions
 
-### 🔍 **Advanced Comparison System**
-- **Three-Way Matching**: 
-  - ✅ **Matched Transactions** (green)
-  - 📝 **Ledger Only** (orange) 
-  - 🏦 **Bank Only** (blue)
-- **Visual Indicators**: Color-coded with action buttons
-- **Quick Actions**: Add to ledger, find in bank, export reports
+### 📊 **Advanced Analytics**
+- **Spending Insights**: AI-powered spending pattern analysis
+- **Category Breakdown**: Visual representation of spending by category
+- **Trend Analysis**: Monthly and yearly spending trends
+- **Match Rate Analytics**: Transaction reconciliation performance metrics
 
-### 🔐 **Authentication & Security**
-- **User Authentication**: Login/signup system
-- **Secure Processing**: Bank-level security for financial data
-- **Session Management**: Persistent user sessions
+## 🚀 Quick Start
 
-## 🚀 Tech Stack
+### Prerequisites
+- Node.js 18+ 
+- pnpm 8+
+- Git
 
-### **Frontend**
-- **Next.js 15** with TypeScript
-- **Tailwind CSS** for styling
-- **Shadcn UI** components
-- **Lucide React** icons
-- **tRPC** for type-safe API calls
-
-### **Backend**
-- **Node.js** with Express
-- **TypeScript** for type safety
-- **Prisma ORM** for database management
-- **Tesseract.js** for OCR processing
-- **Multer** for file uploads
-
-### **Database**
-- **SQLite** (development)
-- **PostgreSQL** (production ready)
-
-### **Deployment**
-- **Vercel** for frontend hosting
-- **Railway/Render** for backend hosting
-
-## 📦 Installation
+### Local Development
 
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/yourusername/minerva.git
-   cd minerva
+   git clone https://github.com/yourusername/minerva-receipt-processor.git
+   cd minerva-receipt-processor
    ```
 
 2. **Install dependencies**
@@ -73,129 +50,193 @@ A full-stack financial management application that automatically processes recei
 
 3. **Set up environment variables**
    ```bash
+   # Create .env file in root directory
    cp .env.example .env
-   # Edit .env with your configuration
    ```
 
-4. **Set up the database**
+4. **Set up database**
    ```bash
-   pnpm prisma generate
-   pnpm prisma db push
+   pnpm db:generate
+   pnpm db:push
    ```
 
 5. **Start development servers**
    ```bash
-   # Terminal 1 - Backend
-   cd packages/backend && pnpm dev
-   
-   # Terminal 2 - Frontend
-   cd apps/frontend && pnpm dev
+   pnpm dev
    ```
 
-## 🎯 Usage
-
-### **Dashboard Overview**
-- View key financial metrics
-- Analyze spending patterns
-- Monitor recent activity
-- Access quick actions
-
-### **Ledger Management**
-- View all receipt entries
-- Filter by category, date, or amount
-- Bulk actions for multiple entries
-- Export data for reporting
-
-### **Receipt Upload**
-- Drag & drop receipt images
-- Automatic OCR processing
-- Manual data verification
-- Category assignment
-
-### **Bank Reconciliation**
-- Upload bank statement CSV
-- Automatic transaction matching
-- Identify discrepancies
-- Generate reconciliation reports
-
-## 🔧 Configuration
-
-### **Environment Variables**
-```env
-# Database
-DATABASE_URL="file:./dev.db"
-
-# Email (optional)
-EMAIL_HOST="smtp.gmail.com"
-EMAIL_PORT=587
-EMAIL_USER="your-email@gmail.com"
-EMAIL_PASS="your-app-password"
-
-# OpenAI (optional)
-OPENAI_API_KEY="your-openai-key"
-```
-
-### **Email Setup**
-1. Configure SMTP settings in `.env`
-2. Enable "Less secure app access" or use app passwords
-3. The system will automatically monitor for receipt emails
-
-## 📊 API Endpoints
-
-### **Ledger**
-- `GET /api/ledger` - Get all ledger entries
-- `POST /api/ledger` - Create new ledger entry
-- `PUT /api/ledger/:id` - Update ledger entry
-- `DELETE /api/ledger/:id` - Delete ledger entry
-
-### **Bank Transactions**
-- `GET /api/bank` - Get all bank transactions
-- `POST /api/bank/upload` - Upload bank statement
-- `GET /api/bank/compare` - Compare with ledger
-
-### **Receipt Processing**
-- `POST /api/receipts/upload` - Upload receipt image
-- `POST /api/receipts/process` - Process receipt with OCR
-
-## 🎨 UI/UX Highlights
-
-- **Glass Morphism Design**: Modern, translucent UI elements
-- **Gradient Backgrounds**: Beautiful color transitions
-- **Micro-animations**: Smooth hover effects and transitions
-- **Data Visualizations**: Interactive charts and progress indicators
-- **Responsive Layout**: Perfect on desktop, tablet, and mobile
+6. **Access the application**
+   - Frontend: http://localhost:3000
+   - Backend API: http://localhost:3001
 
 ## 🚀 Deployment
 
-### **Vercel Deployment**
-1. Connect your GitHub repository to Vercel
-2. Configure environment variables
-3. Deploy automatically on push to main branch
+### Frontend Deployment (Vercel)
 
-### **Backend Deployment**
-1. Deploy to Railway, Render, or Heroku
-2. Set up PostgreSQL database
-3. Configure environment variables
-4. Update frontend API endpoints
+1. **Push to GitHub**
+   ```bash
+   git add .
+   git commit -m "Ready for deployment"
+   git push origin main
+   ```
+
+2. **Deploy to Vercel**
+   - Go to [Vercel.com](https://vercel.com)
+   - Click "New Project"
+   - Import your GitHub repository
+   - Configure settings:
+     - **Framework Preset**: Next.js
+     - **Root Directory**: `apps/frontend`
+     - **Build Command**: `pnpm build:frontend`
+     - **Output Directory**: `.next`
+   - Add environment variables:
+     - `NEXT_PUBLIC_BACKEND_URL`: Your backend URL
+
+3. **Deploy**
+   - Click "Deploy"
+   - Your app will be available at `https://your-project.vercel.app`
+
+### Backend Deployment (Railway)
+
+1. **Prepare backend for deployment**
+   ```bash
+   cd packages/backend
+   ```
+
+2. **Deploy to Railway**
+   - Go to [Railway.app](https://railway.app)
+   - Click "New Project"
+   - Choose "Deploy from GitHub repo"
+   - Select your repository
+   - Configure settings:
+     - **Root Directory**: `packages/backend`
+     - **Build Command**: `pnpm build`
+     - **Start Command**: `pnpm start`
+   - Add environment variables:
+     - `DATABASE_URL`: PostgreSQL connection string
+     - `PORT`: 3001
+     - `NODE_ENV`: production
+
+3. **Set up database**
+   - Add PostgreSQL service in Railway
+   - Copy the connection string to `DATABASE_URL`
+   - Run migrations: `pnpm db:push`
+
+4. **Update frontend backend URL**
+   - Copy your Railway backend URL
+   - Update `NEXT_PUBLIC_BACKEND_URL` in Vercel environment variables
+
+## 🏗️ Architecture
+
+### Frontend (Next.js 15)
+- **Framework**: Next.js 15 with App Router
+- **Styling**: Tailwind CSS + Shadcn UI
+- **State Management**: React Query + tRPC
+- **Type Safety**: TypeScript
+- **UI Components**: Radix UI primitives
+
+### Backend (Express + tRPC)
+- **Runtime**: Node.js with Express
+- **API**: tRPC for type-safe APIs
+- **Database**: Prisma ORM with PostgreSQL
+- **Email Processing**: Nodemailer + Tesseract.js OCR
+- **File Upload**: Multer for file handling
+
+### Database (PostgreSQL)
+- **ORM**: Prisma
+- **Schema**: Ledger entries, bank transactions, user data
+- **Migrations**: Automatic schema management
+
+## 📁 Project Structure
+
+```
+minerva/
+├── apps/
+│   └── frontend/                 # Next.js frontend application
+│       ├── src/
+│       │   ├── app/             # App Router pages
+│       │   ├── components/      # Reusable UI components
+│       │   ├── lib/            # Utility functions
+│       │   └── utils/          # tRPC configuration
+│       └── public/             # Static assets
+├── packages/
+│   └── backend/                # Express backend API
+│       ├── src/
+│       │   ├── app/           # Express app setup
+│       │   ├── router/        # tRPC router definitions
+│       │   ├── services/      # Business logic services
+│       │   └── utils/         # Utility functions
+│       └── prisma/            # Database schema and migrations
+├── prisma/                    # Root Prisma configuration
+└── package.json              # Root package.json for monorepo
+```
+
+## 🔧 Configuration
+
+### Environment Variables
+
+**Frontend (.env.local)**
+```env
+NEXT_PUBLIC_BACKEND_URL=http://localhost:3001/trpc
+```
+
+**Backend (.env)**
+```env
+DATABASE_URL="postgresql://user:password@localhost:5432/minerva"
+PORT=3001
+NODE_ENV=development
+```
+
+## 🧪 Testing
+
+```bash
+# Run all tests
+pnpm test
+
+# Run frontend tests
+pnpm --filter frontend test
+
+# Run backend tests
+pnpm --filter @minerva/backend test
+```
+
+## 📝 API Documentation
+
+### Ledger Endpoints
+- `GET /trpc/ledger.getAll` - Get all ledger entries
+- `POST /trpc/ledger.create` - Create new ledger entry
+- `PUT /trpc/ledger.update` - Update ledger entry
+- `DELETE /trpc/ledger.delete` - Delete ledger entry
+
+### Bank Endpoints
+- `GET /trpc/bank.getAll` - Get all bank transactions
+- `POST /trpc/bank.uploadStatement` - Upload bank statement CSV
+- `POST /trpc/bank.processStatement` - Process uploaded statement
+
+### Comparison Endpoints
+- `GET /trpc/compare.getComparison` - Get transaction comparison data
+- `POST /trpc/compare.reconcile` - Reconcile transactions
 
 ## 🤝 Contributing
 
 1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Add tests if applicable
-5. Submit a pull request
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
 
-## 📝 License
+## 📄 License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the ISC License - see the [LICENSE](LICENSE) file for details.
 
 ## 🙏 Acknowledgments
 
-- **Tesseract.js** for OCR capabilities
-- **Shadcn UI** for beautiful components
-- **Vercel** for hosting
+- **Next.js** for the amazing React framework
+- **tRPC** for type-safe APIs
 - **Prisma** for database management
+- **Tailwind CSS** for styling
+- **Shadcn UI** for beautiful components
+- **Tesseract.js** for OCR capabilities
 
 ---
 
