@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Upload, FileText, Image, CheckCircle, AlertCircle } from 'lucide-react';
+import { Upload, FileText, ImageIcon, CheckCircle, AlertCircle } from 'lucide-react';
 
 export default function UploadPage() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -57,7 +57,7 @@ export default function UploadPage() {
             <Card className="bg-white shadow-lg border-0">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <Image className="h-5 w-5 text-blue-600" />
+                  <ImageIcon className="h-5 w-5 text-blue-600" />
                   Upload Receipt
                 </CardTitle>
                 <CardDescription>Upload receipt images for AI processing</CardDescription>
@@ -118,7 +118,7 @@ export default function UploadPage() {
                 <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
                   <div className="flex items-center gap-3">
                     {isImage ? (
-                      <Image className="h-8 w-8 text-blue-600" />
+                      <ImageIcon className="h-8 w-8 text-blue-600" />
                     ) : (
                       <FileText className="h-8 w-8 text-green-600" />
                     )}

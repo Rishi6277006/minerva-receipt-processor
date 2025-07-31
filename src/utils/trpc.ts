@@ -1,5 +1,4 @@
 import { createTRPCReact } from '@trpc/react-query';
-import { httpBatchLink } from '@trpc/client';
 import { QueryClient } from '@tanstack/react-query';
 
 // Define a basic type for now
