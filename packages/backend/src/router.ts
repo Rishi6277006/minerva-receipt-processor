@@ -271,7 +271,7 @@ export const appRouter = t.router({
                 const transactionAmount = parseFloat(cleanAmount);
                 if (!isNaN(transactionAmount)) {
                   const transaction = await ctx.prisma.bankTransaction.create({
-                    data: {
+            data: {
                       description,
                       amount: Math.abs(transactionAmount),
                       transactionDate,
