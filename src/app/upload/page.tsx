@@ -21,6 +21,7 @@ export default function UploadPage() {
   const [uploadStatus, setUploadStatus] = useState<'idle' | 'success' | 'error'>('idle');
   const [processingResult, setProcessingResult] = useState<ProcessingResult | null>(null);
   const [uploadedTransactions, setUploadedTransactions] = useState<any[]>([]);
+  const [errorMessage, setErrorMessage] = useState<string>('');
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -28,142 +29,117 @@ export default function UploadPage() {
       setSelectedFile(file);
       setUploadStatus('idle');
       setProcessingResult(null);
+      setErrorMessage('');
     }
-  };
-
-  const generateProcessingResult = (file: File) => {
-    const isImage = file.type.startsWith('image/');
-    const isCSV = file.type === 'text/csv' || file.name.endsWith('.csv');
-    
-    // Generate unique results based on file name and type
-    const fileName = file.name.toLowerCase();
-    const fileSize = file.size;
-    const timestamp = Date.now();
-    
-    if (isImage) {
-      // Generate different receipt results based on file characteristics
-      const vendors = ['Starbucks Coffee', 'McDonald\'s', 'Walmart', 'Target', 'Amazon', 'Chipotle', 'Subway', 'Dunkin\' Donuts'];
-      const categories = ['Food & Beverage', 'Shopping', 'Groceries', 'Entertainment', 'Transportation'];
-      const descriptions = [
-        'Coffee and pastry',
-        'Lunch combo meal',
-        'Grocery shopping',
-        'Home supplies',
-        'Online purchase',
-        'Burrito bowl',
-        'Sandwich and drink',
-        'Coffee and donut'
-      ];
-      
-      const vendorIndex = (timestamp % vendors.length);
-      const categoryIndex = (timestamp % categories.length);
-      const descIndex = (timestamp % descriptions.length);
-      
-      // Generate amount based on file size and timestamp
-      const baseAmount = 10 + (timestamp % 50); // $10-$60
-      const amount = Math.round(baseAmount * 100) / 100; // Round to 2 decimal places
-      
-      return {
-        vendor: vendors[vendorIndex],
-        amount: amount,
-        date: new Date().toISOString().split('T')[0],
-        category: categories[categoryIndex],
-        description: descriptions[descIndex]
-      };
-    } else if (isCSV) {
-      // Generate different CSV processing results
-      const transactions = [
-        {
-          description: 'STARBUCKS COFFEE',
-          amount: 12.50,
-          category: 'Food & Beverage'
-        },
-        {
-          description: 'AMAZON.COM',
-          amount: 89.99,
-          category: 'Shopping'
-        },
-        {
-          description: 'WALMART SUPERCENTER',
-          amount: 156.78,
-          category: 'Groceries'
-        },
-        {
-          description: 'NETFLIX.COM',
-          amount: 15.99,
-          category: 'Entertainment'
-        },
-        {
-          description: 'UBER *TRIP',
-          amount: 23.45,
-          category: 'Transportation'
-        },
-        {
-          description: 'SPOTIFY USA',
-          amount: 9.99,
-          category: 'Entertainment'
-        },
-        {
-          description: 'DOORDASH',
-          amount: 34.56,
-          category: 'Food & Beverage'
-        },
-        {
-          description: 'APPLE.COM/BILL',
-          amount: 2.99,
-          category: 'Entertainment'
-        }
-      ];
-      
-      // Select random transactions based on file characteristics
-      const numTransactions = 2 + (timestamp % 4); // 2-5 transactions
-      const selectedTransactions = [];
-      
-      for (let i = 0; i < numTransactions; i++) {
-        const transactionIndex = (timestamp + i) % transactions.length;
-        selectedTransactions.push({
-          ...transactions[transactionIndex],
-          id: timestamp + i,
-          type: 'bank',
-          date: new Date().toISOString().split('T')[0]
-        });
-      }
-      
-      return selectedTransactions;
-    }
-    
-    return null;
   };
 
   const handleUpload = async () => {
     if (!selectedFile) return;
 
     setIsUploading(true);
+    setErrorMessage('');
     
-    // Simulate processing with realistic data based on actual file
-    setTimeout(() => {
-      setIsUploading(false);
-      setUploadStatus('success');
-      
+    try {
       const isImage = selectedFile.type.startsWith('image/');
       const isCSV = selectedFile.type === 'text/csv' || selectedFile.name.endsWith('.csv');
       
       if (isImage) {
-        // Generate unique receipt processing result
-        const receiptResult = generateProcessingResult(selectedFile) as ProcessingResult;
-        setProcessingResult(receiptResult);
+        // Convert image to base64 for API
+        const base64 = await fileToBase64(selectedFile);
         
-        // Add to uploaded transactions
-        setUploadedTransactions(prev => [...prev, {
-          id: Date.now(),
-          type: 'receipt',
-          ...receiptResult,
-          fileName: selectedFile.name
-        }]);
+        // Call backend API for image processing
+        const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:3001';
+        const response = await fetch(`${backendUrl}/trpc/receipt.uploadImage`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            imageData: base64,
+            fileName: selectedFile.name
+          })
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to process image');
+        }
+
+        const result = await response.json();
+        
+        if (result.error) {
+          throw new Error(result.error);
+        }
+
+        // Use the actual processed data from backend
+        const processedData = result.result?.data || result.data;
+        
+        if (processedData) {
+          const receiptResult: ProcessingResult = {
+            vendor: processedData.vendor || 'Unknown Vendor',
+            amount: processedData.amount || 0,
+            date: processedData.transactionDate || new Date().toISOString().split('T')[0],
+            category: processedData.category || 'Uncategorized',
+            description: processedData.description || 'Receipt processing'
+          };
+          
+          setProcessingResult(receiptResult);
+          
+          // Add to uploaded transactions
+          setUploadedTransactions(prev => [...prev, {
+            id: Date.now(),
+            type: 'receipt',
+            ...receiptResult,
+            fileName: selectedFile.name
+          }]);
+          
+          setUploadStatus('success');
+        } else {
+          throw new Error('No data received from processing');
+        }
+        
       } else if (isCSV) {
-        // Generate unique CSV processing results
-        const csvResults = generateProcessingResult(selectedFile) as any[];
-        setUploadedTransactions(prev => [...prev, ...csvResults]);
+        // Read CSV file content
+        const csvContent = await fileToText(selectedFile);
+        
+        // Call backend API for CSV processing
+        const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:3001';
+        const response = await fetch(`${backendUrl}/trpc/bank.uploadStatement`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            csvData: csvContent
+          })
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to process CSV');
+        }
+
+        const result = await response.json();
+        
+        if (result.error) {
+          throw new Error(result.error);
+        }
+
+        // Use the actual processed data from backend
+        const processedTransactions = result.result?.data || result.data || [];
+        
+        if (processedTransactions.length > 0) {
+          setUploadedTransactions(prev => [...prev, ...processedTransactions.map((tx: any) => ({
+            id: Date.now() + Math.random(),
+            type: 'bank',
+            description: tx.description,
+            amount: tx.amount,
+            date: tx.transactionDate,
+            category: tx.category || 'Bank Transaction'
+          }))]);
+          
+          setUploadStatus('success');
+        } else {
+          throw new Error('No transactions found in CSV');
+        }
       }
       
       setSelectedFile(null);
@@ -173,7 +149,37 @@ export default function UploadPage() {
         setUploadStatus('idle');
         setProcessingResult(null);
       }, 5000);
-    }, 2000);
+      
+    } catch (error) {
+      console.error('Upload error:', error);
+      setErrorMessage(error instanceof Error ? error.message : 'Upload failed');
+      setUploadStatus('error');
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const fileToBase64 = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => {
+        const result = reader.result as string;
+        // Remove the data URL prefix to get just the base64 data
+        const base64 = result.split(',')[1];
+        resolve(base64);
+      };
+      reader.onerror = error => reject(error);
+    });
+  };
+
+  const fileToText = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsText(file);
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = error => reject(error);
+    });
   };
 
   const isImage = selectedFile?.type.startsWith('image/');
@@ -281,6 +287,21 @@ export default function UploadPage() {
                       'Process File'
                     )}
                   </Button>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Error Message */}
+          {errorMessage && (
+            <Card className="bg-red-50 border-red-200 mb-6">
+              <CardContent className="pt-6">
+                <div className="flex items-center gap-3">
+                  <AlertCircle className="h-6 w-6 text-red-600" />
+                  <div>
+                    <p className="font-medium text-red-900">Processing Failed</p>
+                    <p className="text-sm text-red-700">{errorMessage}</p>
+                  </div>
                 </div>
               </CardContent>
             </Card>
