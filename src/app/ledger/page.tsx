@@ -32,12 +32,20 @@ export default function LedgerPage() {
     const fetchLedgerData = async () => {
       try {
         setIsLoading(true);
-        const response = await fetch('/api/ledger');
+        const backendUrl = 'https://minerva-receipt-processor-production.up.railway.app';
+        const response = await fetch(`${backendUrl}/trpc/ledger.getAll`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        });
+        
         if (!response.ok) {
           throw new Error('Failed to fetch ledger data');
         }
+        
         const result = await response.json();
-        setLedgerData(result.data || []);
+        setLedgerData(result.result?.data || []);
       } catch (err) {
         console.error('Error fetching ledger data:', err);
         setError('Failed to load ledger data');
