@@ -38,6 +38,35 @@ app.get('/health', (req, res) => {
   });
 });
 
+// Email test endpoint
+app.get('/test-email', async (req, res) => {
+  try {
+    if (!process.env.EMAIL_USER || !process.env.EMAIL_PASSWORD) {
+      return res.json({ 
+        status: 'error', 
+        message: 'Email credentials not configured',
+        required: ['EMAIL_USER', 'EMAIL_PASSWORD', 'EMAIL_HOST']
+      });
+    }
+
+    const emailService = new (await import('./services/emailService')).EmailService();
+    await emailService.connect();
+    emailService.disconnect();
+    
+    res.json({ 
+      status: 'success', 
+      message: 'Email connection successful',
+      email: process.env.EMAIL_USER
+    });
+  } catch (error) {
+    res.json({ 
+      status: 'error', 
+      message: 'Email connection failed',
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
+
 // Function to seed database with diverse dummy data
 async function seedDatabase() {
   try {
