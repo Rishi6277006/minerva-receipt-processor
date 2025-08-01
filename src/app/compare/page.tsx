@@ -1,38 +1,134 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { CheckCircle, AlertCircle, DollarSign, BarChart3, TrendingUp, TrendingDown } from 'lucide-react';
+import { CheckCircle, AlertCircle, DollarSign, BarChart3, TrendingUp, TrendingDown, Loader2 } from 'lucide-react';
+
+interface LedgerEntry {
+  id: string;
+  vendor: string;
+  amount: number;
+  transactionDate: string;
+  category: string | null;
+  description: string | null;
+}
+
+interface BankTransaction {
+  id: string;
+  description: string;
+  amount: number;
+  transactionDate: string;
+  type: string | null;
+}
 
 export default function ComparePage() {
-  // Mock data
-  const mockData = {
-    summary: {
-      totalTransactions: 24,
-      matchedCount: 18,
-      unmatchedCount: 6,
-      matchRate: 75,
-      totalAmount: 2847.50
-    },
-    matched: [
-      { id: '1', vendor: 'Starbucks Coffee', amount: 12.50, date: '2024-01-15', type: 'ledger' },
-      { id: '2', vendor: 'Amazon.com', amount: 89.99, date: '2024-01-16', type: 'ledger' },
-      { id: '3', vendor: 'Walmart', amount: 156.78, date: '2024-01-18', type: 'ledger' },
-      { id: '4', vendor: 'Netflix', amount: 15.99, date: '2024-01-19', type: 'ledger' },
-    ],
-    ledgerOnly: [
-      { id: '5', vendor: 'Shell Gas Station', amount: 45.67, date: '2024-01-17', description: 'Gas fill-up' },
-      { id: '6', vendor: 'Home Depot', amount: 234.56, date: '2024-01-20', description: 'Garden supplies' },
-    ],
-    bankOnly: [
-      { id: '7', vendor: 'SALARY DEPOSIT', amount: 2500.00, date: '2024-01-25', type: 'CREDIT' },
-      { id: '8', vendor: 'SPOTIFY USA', amount: 9.99, date: '2024-01-22', type: 'DEBIT' },
-      { id: '9', vendor: 'UBER *TRIP', amount: 23.45, date: '2024-01-21', type: 'DEBIT' },
-    ]
+  const [ledgerData, setLedgerData] = useState<LedgerEntry[]>([]);
+  const [bankData, setBankData] = useState<BankTransaction[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // Fetch real data from backend
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setIsLoading(true);
+        
+        // Fetch ledger data
+        const backendUrl = 'https://minerva-receipt-processor-production.up.railway.app';
+        const ledgerResponse = await fetch(`${backendUrl}/trpc/ledger.getAll`);
+        const ledgerResult = await ledgerResponse.json();
+        setLedgerData(ledgerResult.result?.data || []);
+
+        // Fetch bank data
+        const bankResponse = await fetch(`${backendUrl}/trpc/bank.getAll`);
+        const bankResult = await bankResponse.json();
+        setBankData(bankResult.result?.data || []);
+
+      } catch (err) {
+        console.error('Error fetching data:', err);
+        setError('Failed to load comparison data');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
+
+  // Calculate comparison data
+  const calculateComparison = () => {
+    const matched: any[] = [];
+    const ledgerOnly: LedgerEntry[] = [];
+    const bankOnly: BankTransaction[] = [];
+
+    // Simple matching logic (can be enhanced)
+    ledgerData.forEach(ledgerEntry => {
+      const matchingBank = bankData.find(bankTx => 
+        Math.abs(bankTx.amount - ledgerEntry.amount) < 0.01 && // Same amount
+        Math.abs(new Date(bankTx.transactionDate).getTime() - new Date(ledgerEntry.transactionDate).getTime()) < 7 * 24 * 60 * 60 * 1000 // Within 7 days
+      );
+
+      if (matchingBank) {
+        matched.push({
+          id: ledgerEntry.id,
+          vendor: ledgerEntry.vendor,
+          amount: ledgerEntry.amount,
+          date: ledgerEntry.transactionDate,
+          type: 'ledger',
+          bankMatch: matchingBank
+        });
+      } else {
+        ledgerOnly.push(ledgerEntry);
+      }
+    });
+
+    // Find bank-only transactions
+    bankData.forEach(bankTx => {
+      const isMatched = matched.some(match => match.bankMatch?.id === bankTx.id);
+      if (!isMatched) {
+        bankOnly.push(bankTx);
+      }
+    });
+
+    return { matched, ledgerOnly, bankOnly };
   };
+
+  const { matched, ledgerOnly, bankOnly } = calculateComparison();
+  
+  const summary = {
+    totalTransactions: ledgerData.length + bankData.length,
+    matchedCount: matched.length,
+    unmatchedCount: ledgerOnly.length + bankOnly.length,
+    matchRate: ledgerData.length > 0 ? Math.round((matched.length / ledgerData.length) * 100) : 0,
+    totalAmount: ledgerData.reduce((sum, entry) => sum + entry.amount, 0) + 
+                 bankData.reduce((sum, tx) => sum + tx.amount, 0)
+  };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="animate-spin h-12 w-12 mx-auto mb-4 text-blue-600" />
+          <p className="text-gray-600">Loading comparison data...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-red-600 mb-4">{error}</p>
+          <Button onClick={() => window.location.reload()}>Retry</Button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
@@ -51,7 +147,7 @@ export default function ComparePage() {
               <BarChart3 className="h-4 w-4 text-blue-600" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-gray-900">{mockData.summary.totalTransactions}</div>
+              <div className="text-2xl font-bold text-gray-900">{summary.totalTransactions}</div>
               <p className="text-xs text-gray-500">Combined total</p>
             </CardContent>
           </Card>
@@ -62,7 +158,7 @@ export default function ComparePage() {
               <CheckCircle className="h-4 w-4 text-green-600" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-gray-900">{mockData.summary.matchedCount}</div>
+              <div className="text-2xl font-bold text-gray-900">{summary.matchedCount}</div>
               <p className="text-xs text-gray-500">Perfect matches</p>
             </CardContent>
           </Card>
@@ -73,7 +169,7 @@ export default function ComparePage() {
               <TrendingUp className="h-4 w-4 text-purple-600" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-gray-900">{mockData.summary.matchRate}%</div>
+              <div className="text-2xl font-bold text-gray-900">{summary.matchRate}%</div>
               <p className="text-xs text-gray-500">Accuracy rate</p>
             </CardContent>
           </Card>
@@ -84,7 +180,7 @@ export default function ComparePage() {
               <DollarSign className="h-4 w-4 text-green-600" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-gray-900">${mockData.summary.totalAmount.toLocaleString()}</div>
+              <div className="text-2xl font-bold text-gray-900">${summary.totalAmount.toLocaleString()}</div>
               <p className="text-xs text-gray-500">Combined value</p>
             </CardContent>
           </Card>
@@ -100,8 +196,8 @@ export default function ComparePage() {
             <Tabs defaultValue="overview" className="w-full">
               <TabsList className="grid w-full grid-cols-3">
                 <TabsTrigger value="overview">Overview</TabsTrigger>
-                <TabsTrigger value="matched">Matched ({mockData.matched.length})</TabsTrigger>
-                <TabsTrigger value="unmatched">Unmatched ({mockData.ledgerOnly.length + mockData.bankOnly.length})</TabsTrigger>
+                <TabsTrigger value="matched">Matched ({matched.length})</TabsTrigger>
+                <TabsTrigger value="unmatched">Unmatched ({ledgerOnly.length + bankOnly.length})</TabsTrigger>
               </TabsList>
 
               <TabsContent value="overview" className="space-y-6">
@@ -119,7 +215,7 @@ export default function ComparePage() {
                     </CardHeader>
                     <CardContent>
                       <div className="space-y-3">
-                        {mockData.matched.slice(0, 3).map((item) => (
+                        {matched.slice(0, 3).map((item) => (
                           <div key={item.id} className="flex items-center justify-between p-3 bg-white rounded-lg">
                             <div>
                               <p className="font-medium text-gray-900">{item.vendor}</p>
@@ -131,9 +227,9 @@ export default function ComparePage() {
                             </div>
                           </div>
                         ))}
-                        {mockData.matched.length > 3 && (
+                        {matched.length > 3 && (
                           <p className="text-sm text-green-600 text-center">
-                            +{mockData.matched.length - 3} more matches
+                            +{matched.length - 3} more matches
                           </p>
                         )}
                       </div>
@@ -153,11 +249,11 @@ export default function ComparePage() {
                     </CardHeader>
                     <CardContent>
                       <div className="space-y-3">
-                        {mockData.ledgerOnly.map((item) => (
+                        {ledgerOnly.map((item) => (
                           <div key={item.id} className="flex items-center justify-between p-3 bg-white rounded-lg">
                             <div>
                               <p className="font-medium text-gray-900">{item.vendor}</p>
-                              <p className="text-sm text-gray-500">{item.date}</p>
+                              <p className="text-sm text-gray-500">{item.transactionDate}</p>
                             </div>
                             <div className="text-right">
                               <p className="font-bold text-gray-900">${item.amount}</p>
@@ -182,11 +278,11 @@ export default function ComparePage() {
                     </CardHeader>
                     <CardContent>
                       <div className="space-y-3">
-                        {mockData.bankOnly.map((item) => (
+                        {bankOnly.map((item) => (
                           <div key={item.id} className="flex items-center justify-between p-3 bg-white rounded-lg">
                             <div>
-                              <p className="font-medium text-gray-900">{item.vendor}</p>
-                              <p className="text-sm text-gray-500">{item.date}</p>
+                              <p className="font-medium text-gray-900">{item.description}</p>
+                              <p className="text-sm text-gray-500">{item.transactionDate}</p>
                             </div>
                             <div className="text-right">
                               <p className={`font-bold ${item.type === 'CREDIT' ? 'text-green-600' : 'text-red-600'}`}>
@@ -213,7 +309,7 @@ export default function ComparePage() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {mockData.matched.map((item) => (
+                    {matched.map((item) => (
                       <TableRow key={item.id}>
                         <TableCell className="font-medium">{item.vendor}</TableCell>
                         <TableCell>${item.amount}</TableCell>
@@ -246,12 +342,12 @@ export default function ComparePage() {
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {mockData.ledgerOnly.map((item) => (
+                        {ledgerOnly.map((item) => (
                           <TableRow key={item.id}>
                             <TableCell className="font-medium">{item.vendor}</TableCell>
                             <TableCell>${item.amount}</TableCell>
-                            <TableCell>{item.date}</TableCell>
-                            <TableCell>{item.description}</TableCell>
+                            <TableCell>{item.transactionDate}</TableCell>
+                            <TableCell>{item.description || 'N/A'}</TableCell>
                             <TableCell>
                               <Badge className="bg-yellow-100 text-yellow-800">
                                 <AlertCircle className="h-3 w-3 mr-1" />
@@ -278,13 +374,13 @@ export default function ComparePage() {
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {mockData.bankOnly.map((item) => (
+                        {bankOnly.map((item) => (
                           <TableRow key={item.id}>
-                            <TableCell className="font-medium">{item.vendor}</TableCell>
+                            <TableCell className="font-medium">{item.description}</TableCell>
                             <TableCell className={item.type === 'CREDIT' ? 'text-green-600' : 'text-red-600'}>
                               {item.type === 'CREDIT' ? '+' : '-'}${item.amount}
                             </TableCell>
-                            <TableCell>{item.date}</TableCell>
+                            <TableCell>{item.transactionDate}</TableCell>
                             <TableCell>
                               <Badge variant={item.type === 'CREDIT' ? 'default' : 'secondary'}>
                                 {item.type}
