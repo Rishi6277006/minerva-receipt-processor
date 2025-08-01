@@ -4,6 +4,7 @@ import './globals.css';
 import { TRPCProvider } from '@/components/trpc-provider';
 import { Toaster } from '@/components/ui/sonner';
 import { Navigation } from '@/components/navigation';
+import { Analytics } from '@vercel/analytics/next';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -24,6 +25,7 @@ export default function RootLayout({
           <Navigation />
           {children}
           <Toaster />
+          <Analytics />
         </TRPCProvider>
       </body>
     </html>
