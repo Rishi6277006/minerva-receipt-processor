@@ -6,23 +6,50 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Search, Filter, Download, Trash2, Receipt } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+
+interface LedgerEntry {
+  id: string;
+  vendor: string;
+  amount: number;
+  category: string | null;
+  transactionDate: string;
+  description: string | null;
+  receiptUrl: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
 
 export default function LedgerPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
+  const [ledgerData, setLedgerData] = useState<LedgerEntry[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  // Mock data
-  const mockLedgerData = [
-    { id: '1', vendor: 'Starbucks Coffee', amount: 12.50, category: 'Food & Beverage', transactionDate: '2024-01-15', description: 'Venti Caramel Macchiato', status: 'matched' },
-    { id: '2', vendor: 'Amazon.com', amount: 89.99, category: 'Shopping', transactionDate: '2024-01-16', description: 'Wireless headphones', status: 'matched' },
-    { id: '3', vendor: 'Shell Gas Station', amount: 45.67, category: 'Transportation', transactionDate: '2024-01-17', description: 'Gas fill-up', status: 'unmatched' },
-    { id: '4', vendor: 'Walmart', amount: 156.78, category: 'Groceries', transactionDate: '2024-01-18', description: 'Weekly shopping', status: 'matched' },
-    { id: '5', vendor: 'Netflix', amount: 15.99, category: 'Entertainment', transactionDate: '2024-01-19', description: 'Monthly subscription', status: 'matched' },
-    { id: '6', vendor: 'Home Depot', amount: 234.56, category: 'Home', transactionDate: '2024-01-20', description: 'Garden supplies', status: 'unmatched' },
-  ];
+  // Fetch real data from backend
+  useEffect(() => {
+    const fetchLedgerData = async () => {
+      try {
+        setIsLoading(true);
+        const response = await fetch('/api/ledger');
+        if (!response.ok) {
+          throw new Error('Failed to fetch ledger data');
+        }
+        const result = await response.json();
+        setLedgerData(result.data || []);
+      } catch (err) {
+        console.error('Error fetching ledger data:', err);
+        setError('Failed to load ledger data');
+      } finally {
+        setIsLoading(false);
+      }
+    };
 
-  const categories = ['all', 'Food & Beverage', 'Shopping', 'Transportation', 'Groceries', 'Entertainment', 'Home'];
+    fetchLedgerData();
+  }, []);
+
+  const categories = ['all', 'Food & Beverage', 'Shopping', 'Transportation', 'Groceries', 'Entertainment', 'Home', 'General'];
 
   const getCategoryIcon = (category: string) => {
     const icons: Record<string, string> = {
@@ -31,7 +58,8 @@ export default function LedgerPage() {
       'Shopping': '🛒',
       'Groceries': '🥬',
       'Entertainment': '🎬',
-      'Home': '🏠'
+      'Home': '🏠',
+      'General': '📄'
     };
     return icons[category] || '📄';
   };
@@ -40,15 +68,37 @@ export default function LedgerPage() {
     return status === 'matched' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800';
   };
 
-  const filteredData = mockLedgerData.filter(item => {
+  const filteredData = ledgerData.filter(item => {
     const matchesSearch = item.vendor.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         item.description.toLowerCase().includes(searchTerm.toLowerCase());
+                         (item.description && item.description.toLowerCase().includes(searchTerm.toLowerCase()));
     const matchesCategory = selectedCategory === 'all' || item.category === selectedCategory;
     return matchesSearch && matchesCategory;
   });
 
   const totalAmount = filteredData.reduce((sum, item) => sum + item.amount, 0);
-  const matchedCount = filteredData.filter(item => item.status === 'matched').length;
+  const matchedCount = filteredData.filter(item => item.receiptUrl && item.receiptUrl.includes('image-upload')).length;
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading ledger data...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-red-600 mb-4">{error}</p>
+          <Button onClick={() => window.location.reload()}>Retry</Button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
@@ -168,15 +218,15 @@ export default function LedgerPage() {
                     <TableCell>${entry.amount.toFixed(2)}</TableCell>
                     <TableCell>
                       <div className="flex items-center gap-2">
-                        <span>{getCategoryIcon(entry.category)}</span>
-                        {entry.category}
+                        <span>{getCategoryIcon(entry.category || 'General')}</span>
+                        {entry.category || 'General'}
                       </div>
                     </TableCell>
                     <TableCell>{new Date(entry.transactionDate).toLocaleDateString()}</TableCell>
-                    <TableCell className="max-w-xs truncate">{entry.description}</TableCell>
+                    <TableCell className="max-w-xs truncate">{entry.description || 'No description'}</TableCell>
                     <TableCell>
-                      <Badge className={getStatusColor(entry.status)}>
-                        {entry.status === 'matched' ? 'Matched' : 'Unmatched'}
+                      <Badge className={getStatusColor(entry.receiptUrl ? 'matched' : 'unmatched')}>
+                        {entry.receiptUrl ? 'Matched' : 'Unmatched'}
                       </Badge>
                     </TableCell>
                     <TableCell>
