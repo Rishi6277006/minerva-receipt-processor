@@ -9,7 +9,16 @@ import { emailService } from './services/emailService';
 const app = express();
 const prisma = new PrismaClient();
 
-app.use(cors());
+// Configure CORS to allow requests from Vercel
+app.use(cors({
+  origin: [
+    'http://localhost:3000',
+    'https://minerva-receipt-processor-frontend-7203b89g3.vercel.app',
+    'https://minerva-receipt-processor-frontend.vercel.app',
+    'https://*.vercel.app'
+  ],
+  credentials: true
+}));
 app.use(express.json());
 
 app.use(
