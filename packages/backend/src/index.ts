@@ -21,14 +21,6 @@ app.use(cors({
 }));
 app.use(express.json());
 
-app.use(
-  '/trpc',
-  trpcExpress.createExpressMiddleware({
-    router: appRouter,
-    createContext,
-  }),
-);
-
 // Health check endpoint
 app.get('/health', (req, res) => {
   res.json({ 
@@ -66,6 +58,14 @@ app.get('/test-email', async (req, res) => {
     });
   }
 });
+
+app.use(
+  '/trpc',
+  trpcExpress.createExpressMiddleware({
+    router: appRouter,
+    createContext,
+  }),
+);
 
 // Function to seed database with diverse dummy data
 async function seedDatabase() {
