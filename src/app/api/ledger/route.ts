@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 
 export async function GET() {
   try {
-    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:3001';
+    const backendUrl = 'https://minerva-receipt-processor-production.up.railway.app';
     const response = await fetch(`${backendUrl}/trpc/ledger.getAll`, {
       method: 'GET',
       headers: {
