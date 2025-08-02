@@ -112,8 +112,8 @@ export default function UploadPage() {
         console.log('Frontend CSV content:', csvContent);
         console.log('CSV content length:', csvContent.length);
         
-        // Call our debug API route for CSV processing
-        const response = await fetch('/api/debug-csv', {
+        // Call our test API route for CSV processing
+        const response = await fetch('/api/test-upload', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -129,6 +129,7 @@ export default function UploadPage() {
         }
 
         const result = await response.json();
+        console.log('Upload response:', result);
         
         if (result.error) {
           throw new Error(result.error.message || 'Processing failed');
