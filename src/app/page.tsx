@@ -229,7 +229,15 @@ export default function Dashboard() {
                   const result = await response.json();
                   
                   // Show success message
-                  alert(`✅ Email Processing Complete!\n\n${result.message || 'Successfully checked for receipt emails'}\n\nThis feature automatically:\n• Scans your email for receipt PDFs\n• Extracts transaction details using AI\n• Adds them to your ledger\n• Matches them with bank statements`);
+                  const message = result.result?.data?.message || result.message || 'Successfully checked for receipt emails';
+                  const isDemo = result.result?.data?.demoMode || false;
+                  const receiptsAdded = result.result?.data?.receiptsAdded || 0;
+                  
+                  if (isDemo) {
+                    alert(`✅ Demo Mode: Email Processing Complete!\n\n${message}\n\nAdded ${receiptsAdded} sample receipts to demonstrate the feature.\n\nIn production, this would:\n• Scan your email for receipt PDFs\n• Extract transaction details using AI\n• Add them to your ledger automatically\n• Match them with bank statements`);
+                  } else {
+                    alert(`✅ Email Processing Complete!\n\n${message}\n\nThis feature automatically:\n• Scans your email for receipt PDFs\n• Extracts transaction details using AI\n• Adds them to your ledger\n• Matches them with bank statements`);
+                  }
                   
                   // Refresh data to show new entries
                   window.location.reload();

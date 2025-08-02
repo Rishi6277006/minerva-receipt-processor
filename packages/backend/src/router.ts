@@ -185,8 +185,22 @@ export const appRouter = t.router({
   email: t.router({
     checkForReceipts: t.procedure.mutation(async () => {
       try {
-        await emailService.checkForReceiptEmails();
-        return { message: 'Email check completed successfully' };
+        const isConfigured = !!(process.env.EMAIL_USER && process.env.EMAIL_PASSWORD);
+        
+        if (!isConfigured) {
+          await emailService.checkForReceiptEmails();
+          return { 
+            message: 'Demo mode: Added sample receipts to demonstrate email processing feature',
+            demoMode: true,
+            receiptsAdded: 3
+          };
+        } else {
+          await emailService.checkForReceiptEmails();
+          return { 
+            message: 'Email check completed successfully',
+            demoMode: false
+          };
+        }
       } catch (error) {
         throw new Error(`Failed to check emails: ${error}`);
       }
