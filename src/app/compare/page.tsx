@@ -38,13 +38,12 @@ export default function ComparePage() {
         setIsLoading(true);
         
         // Fetch ledger data
-        const backendUrl = 'https://minerva-receipt-processor-production.up.railway.app';
-        const ledgerResponse = await fetch(`${backendUrl}/trpc/ledger.getAll`);
+        const ledgerResponse = await fetch('/api/ledger');
         const ledgerResult = await ledgerResponse.json();
         setLedgerData(ledgerResult.result?.data || []);
 
         // Fetch bank data
-        const bankResponse = await fetch(`${backendUrl}/trpc/bank.getAll`);
+        const bankResponse = await fetch('/api/bank');
         const bankResult = await bankResponse.json();
         setBankData(bankResult.result?.data || []);
 

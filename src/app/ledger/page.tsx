@@ -32,13 +32,7 @@ export default function LedgerPage() {
     const fetchLedgerData = async () => {
       try {
         setIsLoading(true);
-        const backendUrl = 'https://minerva-receipt-processor-production.up.railway.app';
-        const response = await fetch(`${backendUrl}/trpc/ledger.getAll`, {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-        });
+        const response = await fetch('/api/ledger');
         
         if (!response.ok) {
           throw new Error('Failed to fetch ledger data');
