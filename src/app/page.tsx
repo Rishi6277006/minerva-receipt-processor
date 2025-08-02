@@ -212,9 +212,23 @@ export default function Dashboard() {
             <p className="text-slate-600">Your complete financial overview at a glance</p>
           </div>
           <div className="flex items-center gap-3">
-            <Button variant="outline" size="sm">
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={async () => {
+                try {
+                  const response = await fetch('/api/test-backend');
+                  const result = await response.json();
+                  console.log('Backend check result:', result);
+                  // Refresh data after email check
+                  window.location.reload();
+                } catch (error) {
+                  console.error('Error checking emails:', error);
+                }
+              }}
+            >
               <RefreshCw className="h-4 w-4 mr-2" />
-              Refresh
+              Check Emails
             </Button>
             <Button variant="outline" size="sm">
               <Download className="h-4 w-4 mr-2" />

@@ -6,7 +6,7 @@ import { ImageService } from './services/imageService';
 import multer from 'multer';
 import { createWriteStream } from 'fs';
 import { pipeline } from 'stream/promises';
-// import { emailService } from './services/emailService';
+import { emailService } from './services/emailService';
 
 const t = initTRPC.context<Context>().create();
 
@@ -309,7 +309,7 @@ export const appRouter = t.router({
   email: t.router({
     checkForReceipts: t.procedure.mutation(async () => {
       try {
-        // await emailService.checkForReceiptEmails(); // Temporarily commenting out email service
+        await emailService.checkForReceiptEmails();
         return { message: 'Email check completed successfully' };
       } catch (error) {
         throw new Error(`Failed to check emails: ${error}`);

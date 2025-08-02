@@ -2,32 +2,34 @@ import { NextResponse } from 'next/server';
 
 export async function GET() {
   try {
-    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:3001';
+    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://minerva-receipt-processor-production.up.railway.app';
     
-    // Test basic connectivity
-    const healthResponse = await fetch(`${backendUrl}/health`);
-    const healthData = await healthResponse.json();
-    
-    // Test tRPC endpoint
-    const trpcResponse = await fetch(`${backendUrl}/trpc/ledger.getAll`);
-    const trpcData = await trpcResponse.json();
+    // Test the email check endpoint
+    const response = await fetch(`${backendUrl}/trpc/email.checkForReceipts`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({})
+    });
+
+    if (!response.ok) {
+      throw new Error(`Backend responded with status: ${response.status}`);
+    }
+
+    const result = await response.json();
     
     return NextResponse.json({
-      status: 'success',
-      backendUrl,
-      health: healthData,
-      trpc: trpcData,
-      timestamp: new Date().toISOString()
+      success: true,
+      message: 'Email check completed',
+      result: result
     });
   } catch (error) {
-    console.error('Backend test error:', error);
-    return NextResponse.json(
-      { 
-        status: 'error', 
-        error: error instanceof Error ? error.message : 'Unknown error',
-        timestamp: new Date().toISOString()
-      },
-      { status: 500 }
-    );
+    console.error('Error testing backend:', error);
+    return NextResponse.json({
+      success: false,
+      message: 'Failed to check emails',
+      error: error instanceof Error ? error.message : 'Unknown error'
+    }, { status: 500 });
   }
 } 

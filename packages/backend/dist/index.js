@@ -45,12 +45,17 @@ const client_1 = require("@prisma/client");
 const emailService_1 = require("./services/emailService");
 const app = (0, express_1.default)();
 const prisma = new client_1.PrismaClient();
-app.use((0, cors_1.default)());
-app.use(express_1.default.json());
-app.use('/trpc', trpcExpress.createExpressMiddleware({
-    router: router_1.appRouter,
-    createContext: context_1.createContext,
+// Configure CORS to allow requests from Vercel
+app.use((0, cors_1.default)({
+    origin: [
+        'http://localhost:3000',
+        'https://minerva-receipt-processor-frontend-7203b89g3.vercel.app',
+        'https://minerva-receipt-processor-frontend.vercel.app',
+        'https://*.vercel.app'
+    ],
+    credentials: true
 }));
+app.use(express_1.default.json());
 // Health check endpoint
 app.get('/health', (req, res) => {
     res.json({
@@ -59,6 +64,37 @@ app.get('/health', (req, res) => {
         emailService: process.env.EMAIL_USER ? 'enabled' : 'disabled'
     });
 });
+// Email test endpoint
+app.get('/test-email', async (req, res) => {
+    try {
+        if (!process.env.EMAIL_USER || !process.env.EMAIL_PASSWORD) {
+            return res.json({
+                status: 'error',
+                message: 'Email credentials not configured',
+                required: ['EMAIL_USER', 'EMAIL_PASSWORD', 'EMAIL_HOST']
+            });
+        }
+        const emailService = new (await Promise.resolve().then(() => __importStar(require('./services/emailService')))).EmailService();
+        await emailService.connect();
+        emailService.disconnect();
+        res.json({
+            status: 'success',
+            message: 'Email connection successful',
+            email: process.env.EMAIL_USER
+        });
+    }
+    catch (error) {
+        res.json({
+            status: 'error',
+            message: 'Email connection failed',
+            error: error instanceof Error ? error.message : 'Unknown error'
+        });
+    }
+});
+app.use('/trpc', trpcExpress.createExpressMiddleware({
+    router: router_1.appRouter,
+    createContext: context_1.createContext,
+}));
 // Function to seed database with diverse dummy data
 async function seedDatabase() {
     try {
