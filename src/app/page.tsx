@@ -127,6 +127,7 @@ export default function Dashboard() {
     const emailConnected = urlParams.get('email_connected');
     const email = urlParams.get('email');
     const name = urlParams.get('name');
+    const code = urlParams.get('code'); // OAuth authorization code
     
     if (emailConnected === 'true' && email) {
       // Update UI to show connected state
@@ -141,8 +142,60 @@ export default function Dashboard() {
       
       // Clear URL parameters
       window.history.replaceState({}, document.title, window.location.pathname);
+    } else if (code) {
+      // Handle OAuth code directly on main page
+      handleOAuthCode(code);
     }
   }, []);
+
+  const handleOAuthCode = async (code: string) => {
+    try {
+      // Show loading state
+      const button = document.querySelector('[data-connect-gmail]') as HTMLButtonElement;
+      if (button) {
+        button.disabled = true;
+        button.innerHTML = '<RefreshCw className="h-4 w-4 mr-2 animate-spin" /> Processing...';
+      }
+
+      // Exchange code for tokens using our API
+      const response = await fetch('/api/auth/gmail/callback', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ code })
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        // Update UI to show connected state
+        setEmailConnectionStatus({
+          connected: true,
+          emailAddress: result.email,
+          provider: 'gmail'
+        });
+        
+        // Show success message
+        alert(`✅ Gmail Connected Successfully!\n\nEmail: ${result.email}\nName: ${result.name}\n\nNow you can:\n• Process real receipt PDFs from Gmail\n• Automatic AI extraction\n• Instant ledger updates\n• Smart bank statement matching\n\nTry the "Check Emails" button to process receipts!`);
+      } else {
+        alert('❌ Failed to connect Gmail. Please try again.');
+      }
+    } catch (error) {
+      console.error('OAuth code handling error:', error);
+      alert('❌ Failed to process OAuth response. Please try again.');
+    } finally {
+      // Reset button
+      const button = document.querySelector('[data-connect-gmail]') as HTMLButtonElement;
+      if (button) {
+        button.disabled = false;
+        button.innerHTML = '<Mail className="h-4 w-4 mr-2" /> Connect Gmail';
+      }
+      
+      // Clear URL parameters
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+  };
 
   const checkEmailConnection = async () => {
     try {
@@ -175,15 +228,8 @@ export default function Dashboard() {
       // REAL Google OAuth - Get credentials from environment
       const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
       
-      // Try different redirect URIs to match Google Cloud Console
-      const possibleRedirectUris = [
-        'https://minerva-receipt-processor-frontend-2jdmzwe4c.vercel.app/api/auth/gmail/callback',
-        'https://minerva-receipt-processor-frontend-2jdmzwe4c.vercel.app/auth/gmail/callback',
-        'https://minerva-receipt-processor-frontend-2jdmzwe4c.vercel.app/',
-        'http://localhost:3000/api/auth/gmail/callback'
-      ];
-      
-      const redirectUri = possibleRedirectUris[0]; // Use the first one for now
+      // Use the main app URL as redirect (simpler and more reliable)
+      const redirectUri = 'https://minerva-receipt-processor-frontend-2jdmzwe4c.vercel.app/';
       
       const scopes = [
         'https://www.googleapis.com/auth/gmail.readonly',
@@ -195,7 +241,7 @@ export default function Dashboard() {
         return;
       }
 
-      // Log the OAuth URL for debugging
+      // Create the OAuth URL
       const authUrl = `https://accounts.google.com/oauth/authorize?` +
         `client_id=${encodeURIComponent(clientId)}` +
         `&redirect_uri=${encodeURIComponent(redirectUri)}` +

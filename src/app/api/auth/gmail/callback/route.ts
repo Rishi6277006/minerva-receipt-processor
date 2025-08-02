@@ -13,7 +13,7 @@ export async function GET(request: NextRequest) {
     // Exchange the authorization code for tokens
     const clientId = process.env.GOOGLE_CLIENT_ID;
     const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
-    const redirectUri = 'https://minerva-receipt-processor-frontend-2jdmzwe4c.vercel.app/api/auth/gmail/callback';
+    const redirectUri = 'https://minerva-receipt-processor-frontend-2jdmzwe4c.vercel.app/';
     
     if (!clientId || !clientSecret) {
       console.error('Google OAuth credentials not configured');
@@ -62,5 +62,68 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error('OAuth callback error:', error);
     return NextResponse.redirect(new URL('/?error=oauth_failed', request.url));
+  }
+}
+
+export async function POST(request: NextRequest) {
+  try {
+    const body = await request.json();
+    const { code } = body;
+    
+    if (!code) {
+      return NextResponse.json({ success: false, error: 'No authorization code provided' });
+    }
+
+    // Exchange the authorization code for tokens
+    const clientId = process.env.GOOGLE_CLIENT_ID;
+    const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
+    const redirectUri = 'https://minerva-receipt-processor-frontend-2jdmzwe4c.vercel.app/';
+    
+    if (!clientId || !clientSecret) {
+      console.error('Google OAuth credentials not configured');
+      return NextResponse.json({ success: false, error: 'OAuth not configured' });
+    }
+
+    // Exchange code for tokens
+    const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: new URLSearchParams({
+        code,
+        client_id: clientId,
+        client_secret: clientSecret,
+        redirect_uri: redirectUri,
+        grant_type: 'authorization_code',
+      }),
+    });
+
+    const tokenData = await tokenResponse.json();
+
+    if (tokenData.error) {
+      console.error('Token exchange error:', tokenData);
+      return NextResponse.json({ success: false, error: 'Token exchange failed' });
+    }
+
+    // Get user info
+    const userResponse = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
+      headers: {
+        'Authorization': `Bearer ${tokenData.access_token}`,
+      },
+    });
+
+    const userData = await userResponse.json();
+
+    return NextResponse.json({
+      success: true,
+      email: userData.email,
+      name: userData.name,
+      accessToken: tokenData.access_token
+    });
+    
+  } catch (error) {
+    console.error('OAuth callback error:', error);
+    return NextResponse.json({ success: false, error: 'OAuth processing failed' });
   }
 } 
