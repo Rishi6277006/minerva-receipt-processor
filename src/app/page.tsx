@@ -151,29 +151,15 @@ export default function Dashboard() {
         button.innerHTML = '<RefreshCw className="h-4 w-4 mr-2 animate-spin" /> Connecting...';
       }
 
-      const response = await fetch('/api/test-backend', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          action: 'generateAuthUrl',
-          userId: 'demo-user'
-        })
-      });
+      // Simulate OAuth flow for demo
+      await new Promise(resolve => setTimeout(resolve, 2000));
       
-      const result = await response.json();
+      // Show demo message
+      alert('🎉 OAuth Demo Mode!\n\nIn production, this would:\n• Connect to your Gmail account securely\n• Process real receipt PDFs automatically\n• Add them to your ledger instantly\n• Match with bank statements\n\nFor now, try the "Check Emails" button to see the AI processing demo!');
       
-      if (result.result?.data?.authUrl) {
-        // Redirect to Google OAuth
-        window.location.href = result.result.data.authUrl;
-      } else if (result.error) {
-        // OAuth not configured - show demo message
-        alert('🎉 OAuth Demo Mode!\n\nIn production, this would:\n• Connect to your Gmail account\n• Process real receipt PDFs\n• Add them to your ledger automatically\n\nFor now, try the "Check Emails" button to see the demo!');
-      } else {
-        alert('Failed to connect Gmail. Please try again.');
-      }
     } catch (error) {
-      console.error('Error generating auth URL:', error);
-      alert('🎉 OAuth Demo Mode!\n\nIn production, this would:\n• Connect to your Gmail account\n• Process real receipt PDFs\n• Add them to your ledger automatically\n\nFor now, try the "Check Emails" button to see the demo!');
+      console.error('Error in OAuth demo:', error);
+      alert('🎉 OAuth Demo Mode!\n\nIn production, this would:\n• Connect to your Gmail account securely\n• Process real receipt PDFs automatically\n• Add them to your ledger instantly\n• Match with bank statements\n\nFor now, try the "Check Emails" button to see the AI processing demo!');
     } finally {
       // Reset button
       const button = document.querySelector('[data-connect-gmail]') as HTMLButtonElement;
@@ -323,9 +309,10 @@ export default function Dashboard() {
                 data-connect-gmail
                 onClick={connectGmail}
                 className="bg-blue-50 border-blue-200 text-blue-700 hover:bg-blue-100"
+                title="Demo: OAuth Gmail integration - In production, this would connect to your Gmail account"
               >
                 <Mail className="h-4 w-4 mr-2" />
-                Connect Gmail
+                Connect Gmail (Demo)
               </Button>
             )}
             
