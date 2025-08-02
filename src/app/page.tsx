@@ -53,34 +53,40 @@ export default function Dashboard() {
       // Fetch ledger data
       const ledgerResponse = await fetch('/api/ledger');
       const ledgerResult = await ledgerResponse.json();
-      setLedgerData(ledgerResult.data || []);
+      const ledgerData = ledgerResult.result?.data || [];
+      setLedgerData(ledgerData);
 
       // Fetch bank data
       const bankResponse = await fetch('/api/bank');
       const bankResult = await bankResponse.json();
-      setBankData(bankResult.data || []);
+      const bankData = bankResult.result?.data || [];
+      setBankData(bankData);
 
       // Calculate totals
-      const spent = (ledgerResult.data || []).reduce((sum: number, entry: any) => sum + entry.amount, 0);
+      const spent = ledgerData.reduce((sum: number, entry: any) => sum + (entry.amount || 0), 0);
       setTotalSpent(spent);
 
-      const income = (bankResult.data || [])
+      const income = bankData
         .filter((tx: any) => tx.type === 'CREDIT')
-        .reduce((sum: number, tx: any) => sum + tx.amount, 0);
+        .reduce((sum: number, tx: any) => sum + (tx.amount || 0), 0);
       setTotalIncome(income);
 
       // Category breakdown
       const categories: Record<string, number> = {};
-      (ledgerResult.data || []).forEach((entry: any) => {
-        categories[entry.category] = (categories[entry.category] || 0) + entry.amount;
+      ledgerData.forEach((entry: any) => {
+        if (entry.category && entry.amount) {
+          categories[entry.category] = (categories[entry.category] || 0) + entry.amount;
+        }
       });
       setCategoryBreakdown(categories);
 
       // Monthly trend
       const monthly: Record<string, number> = {};
-      (ledgerResult.data || []).forEach((entry: any) => {
-        const month = new Date(entry.transactionDate).toLocaleDateString('en-US', { month: 'short' });
-        monthly[month] = (monthly[month] || 0) + entry.amount;
+      ledgerData.forEach((entry: any) => {
+        if (entry.transactionDate && entry.amount) {
+          const month = new Date(entry.transactionDate).toLocaleDateString('en-US', { month: 'short' });
+          monthly[month] = (monthly[month] || 0) + entry.amount;
+        }
       });
       setMonthlyTrend(monthly);
 
