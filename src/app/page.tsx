@@ -144,6 +144,13 @@ export default function Dashboard() {
 
   const connectGmail = async () => {
     try {
+      // Show loading state
+      const button = event?.target as HTMLButtonElement;
+      if (button) {
+        button.disabled = true;
+        button.innerHTML = '<RefreshCw className="h-4 w-4 mr-2 animate-spin" /> Connecting...';
+      }
+
       const response = await fetch('/api/test-backend', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -154,13 +161,26 @@ export default function Dashboard() {
       });
       
       const result = await response.json();
+      
       if (result.result?.data?.authUrl) {
         // Redirect to Google OAuth
         window.location.href = result.result.data.authUrl;
+      } else if (result.error) {
+        // OAuth not configured - show demo message
+        alert('🎉 OAuth Demo Mode!\n\nIn production, this would:\n• Connect to your Gmail account\n• Process real receipt PDFs\n• Add them to your ledger automatically\n\nFor now, try the "Check Emails" button to see the demo!');
+      } else {
+        alert('Failed to connect Gmail. Please try again.');
       }
     } catch (error) {
       console.error('Error generating auth URL:', error);
-      alert('Failed to connect Gmail. Please try again.');
+      alert('🎉 OAuth Demo Mode!\n\nIn production, this would:\n• Connect to your Gmail account\n• Process real receipt PDFs\n• Add them to your ledger automatically\n\nFor now, try the "Check Emails" button to see the demo!');
+    } finally {
+      // Reset button
+      const button = document.querySelector('[data-connect-gmail]') as HTMLButtonElement;
+      if (button) {
+        button.disabled = false;
+        button.innerHTML = '<Mail className="h-4 w-4 mr-2" /> Connect Gmail';
+      }
     }
   };
 
@@ -300,6 +320,7 @@ export default function Dashboard() {
               <Button 
                 variant="outline" 
                 size="sm"
+                data-connect-gmail
                 onClick={connectGmail}
                 className="bg-blue-50 border-blue-200 text-blue-700 hover:bg-blue-100"
               >

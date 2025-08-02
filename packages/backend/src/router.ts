@@ -216,11 +216,22 @@ export const appRouter = t.router({
       .input(z.object({ userId: z.string() }))
       .mutation(async ({ input }) => {
         try {
+          // Check if OAuth credentials are configured
+          if (!process.env.GOOGLE_CLIENT_ID || !process.env.GOOGLE_CLIENT_SECRET) {
+            return { 
+              error: 'OAuth not configured',
+              message: 'Google OAuth credentials not configured. Running in demo mode.'
+            };
+          }
+          
           const authUrl = oauthService.generateAuthUrl();
           return { authUrl };
         } catch (error) {
           console.error('Error generating auth URL:', error);
-          throw new Error('Failed to generate authorization URL');
+          return { 
+            error: 'OAuth configuration error',
+            message: 'Failed to generate authorization URL'
+          };
         }
       }),
 
