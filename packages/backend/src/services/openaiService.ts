@@ -59,75 +59,9 @@ Return only valid JSON with these exact field names.`;
 export async function parseCSVWithOpenAI(csvData: string) {
   console.log('Parsing CSV data:', csvData.substring(0, 200) + '...');
   
-  // Force using basic parsing for better accuracy with this format
+  // Use basic parsing for better accuracy with this format
   console.log('Using basic CSV parsing for better accuracy');
   return parseCSVBasic(csvData);
-  
-  // If OpenAI is not available, use basic parsing
-  if (!openai) {
-    console.log('OpenAI not configured, using basic CSV parsing');
-    return parseCSVBasic(csvData);
-  }
-
-  const prompt = `You are an expert bank statement parser. Parse this CSV data and extract all financial transactions in JSON format.
-
-CSV Data:
-${csvData}
-
-CRITICAL INSTRUCTIONS:
-1. This CSV has columns: Date, Description, Deposits, Withdrawls, Balance
-2. Parse each row that has either Deposits > 0 OR Withdrawls > 0
-3. For each row:
-   - If Deposits > 0: Create a CREDIT transaction with the Deposits amount
-   - If Withdrawls > 0: Create a DEBIT transaction with the Withdrawls amount
-   - Use the exact Date and Description from the CSV
-   - Convert dates from "DD-Mon-YYYY" format to "YYYY-MM-DD"
-
-EXAMPLES:
-- Row: "20-Aug-2020,Cheque,3391.02,0,83839.3" → CREDIT transaction with amount 3391.02
-- Row: "21-Aug-2020,ATM,0,82961.17,231683.5" → DEBIT transaction with amount 82961.17
-
-Rules:
-- Use EXACT amounts from Deposits/Withdrawls columns
-- Use EXACT descriptions from Description column
-- Convert dates: "20-Aug-2020" → "2020-08-20"
-- Skip rows where both Deposits and Withdrawls are 0
-- Skip the header row
-- Return only valid JSON array
-
-Return a JSON array with this structure:
-[
-  {
-    "date": "2020-08-20",
-    "description": "Cheque",
-    "amount": 3391.02,
-    "type": "CREDIT"
-  },
-  {
-    "date": "2020-08-21", 
-    "description": "ATM",
-    "amount": 82961.17,
-    "type": "DEBIT"
-  }
-]
-
-Return only valid JSON array.`;
-
-  const chatCompletion = await openai.chat.completions.create({
-    messages: [{ role: 'user', content: prompt }],
-    model: 'gpt-4o',
-    response_format: { type: "json_object" },
-  });
-
-  const content = chatCompletion.choices[0].message.content;
-  if (content) {
-    console.log('OpenAI CSV response:', content);
-    const parsed = JSON.parse(content);
-    console.log('Parsed CSV result:', parsed);
-    return parsed;
-  } else {
-    throw new Error("Failed to parse CSV with OpenAI");
-  }
 }
 
 // Basic parser for when OpenAI is not available
