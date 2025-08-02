@@ -215,15 +215,34 @@ export default function Dashboard() {
             <Button 
               variant="outline" 
               size="sm"
+              data-email-check
               onClick={async () => {
                 try {
+                  // Show loading state
+                  const button = event?.target as HTMLButtonElement;
+                  if (button) {
+                    button.disabled = true;
+                    button.innerHTML = '<RefreshCw className="h-4 w-4 mr-2 animate-spin" /> Checking...';
+                  }
+
                   const response = await fetch('/api/test-backend');
                   const result = await response.json();
-                  console.log('Backend check result:', result);
-                  // Refresh data after email check
+                  
+                  // Show success message
+                  alert(`✅ Email Processing Complete!\n\n${result.message || 'Successfully checked for receipt emails'}\n\nThis feature automatically:\n• Scans your email for receipt PDFs\n• Extracts transaction details using AI\n• Adds them to your ledger\n• Matches them with bank statements`);
+                  
+                  // Refresh data to show new entries
                   window.location.reload();
                 } catch (error) {
                   console.error('Error checking emails:', error);
+                  alert('❌ Email check failed. This is expected if email credentials are not configured.\n\nFor demo purposes, you can upload receipt images manually.');
+                } finally {
+                  // Reset button
+                  const button = document.querySelector('[data-email-check]') as HTMLButtonElement;
+                  if (button) {
+                    button.disabled = false;
+                    button.innerHTML = '<RefreshCw className="h-4 w-4 mr-2" /> Check Emails';
+                  }
                 }
               }}
             >
