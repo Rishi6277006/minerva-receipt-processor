@@ -72,24 +72,39 @@ ${csvData}
 
 Instructions:
 1. Parse each row as a separate transaction
-2. Extract: date, description, amount, type (DEBIT/CREDIT)
-3. Handle different CSV formats automatically
+2. Handle different CSV formats including:
+   - Single "Amount" column with "Type" column
+   - Separate "Deposits" and "Withdrawls" columns
+   - Any other bank statement format
+3. Extract: date, description, amount, type (DEBIT/CREDIT)
 4. Clean and normalize the data
 5. Return an array of transaction objects
 
 Rules:
 - For amount: Remove currency symbols and convert to number
-- For date: Convert to YYYY-MM-DD format
-- For type: Determine if DEBIT (money spent) or CREDIT (money received)
+- For date: Convert to YYYY-MM-DD format (handle DD-Mon-YYYY format)
+- For type: 
+  * If there's a "Type" column, use it directly
+  * If there are separate "Deposits" and "Withdrawls" columns:
+    - Use Deposits amount for CREDIT transactions
+    - Use Withdrawls amount for DEBIT transactions
+    - Skip rows where both are 0
 - For description: Clean up the text, remove extra spaces
 - Skip header rows and empty rows
+- Handle date formats like "20-Aug-2020" → "2020-08-20"
 
 Return a JSON array with this structure:
 [
   {
-    "date": "2024-01-15",
-    "description": "Grocery Store",
-    "amount": 45.67,
+    "date": "2020-08-20",
+    "description": "Cheque",
+    "amount": 3391.02,
+    "type": "CREDIT"
+  },
+  {
+    "date": "2020-08-21", 
+    "description": "ATM",
+    "amount": 82961.17,
     "type": "DEBIT"
   }
 ]
@@ -224,26 +239,96 @@ function parseCSVBasic(csvData: string) {
   }
   
   const headers = lines[0].split(',').map(h => h.trim().toLowerCase());
+  console.log('Basic parser headers:', headers);
   
-  for (let i = 1; i < lines.length; i++) {
-    const values = lines[i].split(',').map(v => v.trim().replace(/^["']|["']$/g, ''));
+  // Check if we have separate deposits/withdrawals columns
+  const hasDeposits = headers.some(h => h.includes('deposit'));
+  const hasWithdrawals = headers.some(h => h.includes('withdrawal') || h.includes('withdrawl'));
+  
+  if (hasDeposits && hasWithdrawals) {
+    // Handle separate deposits/withdrawals format
+    const dateIndex = headers.findIndex(h => h.includes('date'));
+    const descIndex = headers.findIndex(h => h.includes('description') || h.includes('desc'));
+    const depositsIndex = headers.findIndex(h => h.includes('deposit'));
+    const withdrawalsIndex = headers.findIndex(h => h.includes('withdrawal') || h.includes('withdrawl'));
     
-    if (values.length < 3) continue;
-    
-    const date = values[0];
-    const description = values[1];
-    const amount = parseFloat(values[2].replace(/[$,]/g, ''));
-    const type = values[3] || 'DEBIT';
-    
-    if (!isNaN(amount) && date && description) {
-      transactions.push({
-        date: new Date(date).toISOString().split('T')[0],
-        description,
-        amount,
-        type: type.toUpperCase()
-      });
+    for (let i = 1; i < lines.length; i++) {
+      const values = lines[i].split(',').map(v => v.trim().replace(/^["']|["']$/g, ''));
+      
+      if (values.length < Math.max(dateIndex, descIndex, depositsIndex, withdrawalsIndex) + 1) continue;
+      
+      const date = values[dateIndex];
+      const description = values[descIndex];
+      const deposits = parseFloat(values[depositsIndex]?.replace(/[$,]/g, '') || '0');
+      const withdrawals = parseFloat(values[withdrawalsIndex]?.replace(/[$,]/g, '') || '0');
+      
+      // Handle deposits (CREDIT)
+      if (!isNaN(deposits) && deposits > 0 && date && description) {
+        transactions.push({
+          date: convertDate(date),
+          description,
+          amount: deposits,
+          type: 'CREDIT'
+        });
+      }
+      
+      // Handle withdrawals (DEBIT)
+      if (!isNaN(withdrawals) && withdrawals > 0 && date && description) {
+        transactions.push({
+          date: convertDate(date),
+          description,
+          amount: withdrawals,
+          type: 'DEBIT'
+        });
+      }
+    }
+  } else {
+    // Handle single amount column format
+    for (let i = 1; i < lines.length; i++) {
+      const values = lines[i].split(',').map(v => v.trim().replace(/^["']|["']$/g, ''));
+      
+      if (values.length < 3) continue;
+      
+      const date = values[0];
+      const description = values[1];
+      const amount = parseFloat(values[2].replace(/[$,]/g, ''));
+      const type = values[3] || 'DEBIT';
+      
+      if (!isNaN(amount) && amount > 0 && date && description) {
+        transactions.push({
+          date: convertDate(date),
+          description,
+          amount,
+          type: type.toUpperCase()
+        });
+      }
     }
   }
   
   return transactions;
+}
+
+// Helper function to convert various date formats
+function convertDate(dateStr: string): string {
+  // Handle DD-Mon-YYYY format (e.g., "20-Aug-2020")
+  const monthMap: { [key: string]: string } = {
+    'jan': '01', 'feb': '02', 'mar': '03', 'apr': '04',
+    'may': '05', 'jun': '06', 'jul': '07', 'aug': '08',
+    'sep': '09', 'oct': '10', 'nov': '11', 'dec': '12'
+  };
+  
+  const match = dateStr.match(/(\d{1,2})-([A-Za-z]{3})-(\d{4})/);
+  if (match) {
+    const day = match[1].padStart(2, '0');
+    const month = monthMap[match[2].toLowerCase()] || '01';
+    const year = match[3];
+    return `${year}-${month}-${day}`;
+  }
+  
+  // Try standard date parsing
+  try {
+    return new Date(dateStr).toISOString().split('T')[0];
+  } catch {
+    return new Date().toISOString().split('T')[0];
+  }
 } 
