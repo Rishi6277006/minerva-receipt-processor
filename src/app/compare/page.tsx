@@ -14,9 +14,11 @@ import {
   Calendar,
   Building2,
   FileText,
-  CreditCard
+  CreditCard,
+  Plus
 } from 'lucide-react';
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LineChart, Line } from 'recharts';
+import { Button } from '@/components/ui/button';
 
 interface LedgerEntry {
   id: string;
@@ -53,29 +55,48 @@ export default function ComparePage() {
   });
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isAddingSampleData, setIsAddingSampleData] = useState(false);
+
+  const fetchComparisonData = async () => {
+    try {
+      setIsLoading(true);
+      const response = await fetch('/api/compare');
+      const result = await response.json();
+      
+      if (result.result?.data) {
+        setComparisonData(result.result.data);
+      } else {
+        setComparisonData(result);
+      }
+    } catch (err) {
+      console.error('Error fetching comparison data:', err);
+      setError('Failed to load comparison data');
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchComparisonData = async () => {
-      try {
-        setIsLoading(true);
-        const response = await fetch('/api/compare');
-        const result = await response.json();
-        
-        if (result.result?.data) {
-          setComparisonData(result.result.data);
-        } else {
-          setComparisonData(result);
-        }
-      } catch (err) {
-        console.error('Error fetching comparison data:', err);
-        setError('Failed to load comparison data');
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
     fetchComparisonData();
   }, []);
+
+  const addSampleData = async () => {
+    try {
+      setIsAddingSampleData(true);
+      const response = await fetch('/api/add-sample-data', {
+        method: 'POST',
+      });
+      
+      if (response.ok) {
+        // Refresh the data after adding sample data
+        await fetchComparisonData();
+      }
+    } catch (error) {
+      console.error('Error adding sample data:', error);
+    } finally {
+      setIsAddingSampleData(false);
+    }
+  };
 
   if (isLoading) {
     return (
@@ -145,9 +166,24 @@ export default function ComparePage() {
   return (
     <div className="container mx-auto p-6 space-y-6">
       {/* Header */}
-      <div className="text-center space-y-2">
-        <h1 className="text-3xl font-bold text-gray-900">Transaction Comparison</h1>
-        <p className="text-gray-600">Compare your receipts with bank transactions</p>
+      <div className="text-center space-y-4">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">Transaction Comparison</h1>
+          <p className="text-gray-600">Compare your receipts with bank transactions</p>
+        </div>
+        
+        {/* Sample Data Button */}
+        <div className="flex justify-center">
+          <Button 
+            onClick={addSampleData}
+            disabled={isAddingSampleData}
+            variant="outline"
+            className="flex items-center gap-2"
+          >
+            <Plus className="h-4 w-4" />
+            {isAddingSampleData ? 'Adding Sample Data...' : 'Add Sample Data for Demo'}
+          </Button>
+        </div>
       </div>
 
       {/* Summary Cards */}
