@@ -83,14 +83,40 @@ export default function ComparePage() {
   const addSampleData = async () => {
     try {
       setIsAddingSampleData(true);
-      const response = await fetch('/api/add-sample-data', {
-        method: 'POST',
-      });
       
-      if (response.ok) {
-        // Refresh the data after adding sample data
-        await fetchComparisonData();
-      }
+      // Add sample data directly to the current state for better visualizations
+      const sampleData = [
+        { vendor: 'Starbucks', amount: 24.50, category: 'Food & Beverage', description: 'Coffee and snacks' },
+        { vendor: 'Amazon', amount: 89.99, category: 'Shopping', description: 'Online purchase' },
+        { vendor: 'Uber', amount: 32.75, category: 'Transportation', description: 'Ride service' },
+        { vendor: 'Walmart', amount: 156.80, category: 'Groceries', description: 'Grocery shopping' },
+        { vendor: 'Netflix', amount: 15.99, category: 'Entertainment', description: 'Streaming subscription' },
+        { vendor: 'Home Depot', amount: 67.45, category: 'Home', description: 'Home improvement' },
+        { vendor: 'Gas Station', amount: 45.20, category: 'Transportation', description: 'Fuel purchase' },
+        { vendor: 'Restaurant', amount: 78.90, category: 'Food & Beverage', description: 'Dinner out' },
+        { vendor: 'Target', amount: 123.45, category: 'Shopping', description: 'Retail purchase' },
+        { vendor: 'CVS', amount: 34.67, category: 'General', description: 'Pharmacy items' }
+      ];
+
+      const newSampleEntries = sampleData.map((item, index) => ({
+        id: `sample-${Date.now()}-${index}`,
+        vendor: item.vendor,
+        amount: item.amount,
+        currency: 'USD',
+        transactionDate: new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000).toISOString(),
+        category: item.category,
+        description: item.description,
+        receiptUrl: null,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      }));
+
+      // Add sample data to ledgerOnly
+      setComparisonData(prev => ({
+        ...prev,
+        ledgerOnly: [...prev.ledgerOnly, ...newSampleEntries]
+      }));
+      
     } catch (error) {
       console.error('Error adding sample data:', error);
     } finally {
@@ -173,7 +199,7 @@ export default function ComparePage() {
         </div>
         
         {/* Sample Data Button */}
-        <div className="flex justify-center">
+        <div className="flex justify-center gap-4">
           <Button 
             onClick={addSampleData}
             disabled={isAddingSampleData}
@@ -182,6 +208,21 @@ export default function ComparePage() {
           >
             <Plus className="h-4 w-4" />
             {isAddingSampleData ? 'Adding Sample Data...' : 'Add Sample Data for Demo'}
+          </Button>
+          
+          <Button 
+            onClick={() => {
+              // Limit bank transactions for better visualization
+              setComparisonData(prev => ({
+                ...prev,
+                bankOnly: prev.bankOnly.slice(0, 30) // Limit to 30 transactions
+              }));
+            }}
+            variant="outline"
+            className="flex items-center gap-2"
+          >
+            <TrendingDown className="h-4 w-4" />
+            Balance Data for Demo
           </Button>
         </div>
       </div>
