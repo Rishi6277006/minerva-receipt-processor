@@ -281,11 +281,15 @@ export const appRouter = t.router({
                   // Use type from CSV if available, otherwise infer from amount
                   let transactionType = type || (transactionAmount < 0 ? 'DEBIT' : 'CREDIT');
                   
-                  // Normalize type values
-                  if (transactionType.toUpperCase().includes('DEBIT') || transactionType.toUpperCase().includes('WITHDRAWAL')) {
+                  // Normalize type values - handle case sensitivity
+                  const typeUpper = transactionType.toUpperCase();
+                  if (typeUpper.includes('DEBIT') || typeUpper.includes('WITHDRAWAL') || typeUpper === 'DEBIT') {
                     transactionType = 'DEBIT';
-                  } else if (transactionType.toUpperCase().includes('CREDIT') || transactionType.toUpperCase().includes('DEPOSIT')) {
+                  } else if (typeUpper.includes('CREDIT') || typeUpper.includes('DEPOSIT') || typeUpper === 'CREDIT') {
                     transactionType = 'CREDIT';
+                  } else {
+                    // Default to DEBIT for unknown types
+                    transactionType = 'DEBIT';
                   }
                   
                   const transaction = await ctx.prisma.bankTransaction.create({
