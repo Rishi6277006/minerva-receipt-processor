@@ -151,19 +151,27 @@ export default function Dashboard() {
         button.innerHTML = '<RefreshCw className="h-4 w-4 mr-2 animate-spin" /> Connecting...';
       }
 
-      // Call the direct OAuth endpoint
-      const response = await fetch('/api/oauth/gmail');
-      const result = await response.json();
+      // Use direct Google OAuth URL for now
+      const clientId = 'your-google-client-id'; // This will be replaced with real client ID
+      const redirectUri = 'https://minerva-receipt-processor-frontend-2jdmzwe4c.vercel.app/api/auth/gmail/callback';
+      const scopes = [
+        'https://www.googleapis.com/auth/gmail.readonly',
+        'https://www.googleapis.com/auth/userinfo.email'
+      ];
+
+      const authUrl = `https://accounts.google.com/oauth/authorize?` +
+        `client_id=${encodeURIComponent(clientId)}` +
+        `&redirect_uri=${encodeURIComponent(redirectUri)}` +
+        `&scope=${encodeURIComponent(scopes.join(' '))}` +
+        `&response_type=code` +
+        `&access_type=offline` +
+        `&prompt=consent`;
+
+      // For demo purposes, show the OAuth flow
+      alert('🚀 OAuth Flow Demo!\n\nIn production, this would:\n• Redirect to Google OAuth\n• Request Gmail access\n• Process real receipt PDFs\n• Add to ledger automatically\n\nFor now, try the "Check Emails" button to see AI processing!');
       
-      if (result.authUrl) {
-        // Redirect to REAL Google OAuth
-        window.location.href = result.authUrl;
-      } else if (result.error) {
-        // Show error message
-        alert(`❌ OAuth Error: ${result.error}`);
-      } else {
-        alert('❌ Failed to connect Gmail. Please try again.');
-      }
+      // In production, this would redirect:
+      // window.location.href = authUrl;
       
     } catch (error) {
       console.error('Error connecting Gmail:', error);
