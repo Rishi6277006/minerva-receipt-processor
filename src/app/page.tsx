@@ -121,6 +121,27 @@ export default function Dashboard() {
   useEffect(() => {
     fetchData();
     checkEmailConnection();
+    
+    // Check for OAuth success redirect
+    const urlParams = new URLSearchParams(window.location.search);
+    const emailConnected = urlParams.get('email_connected');
+    const email = urlParams.get('email');
+    const name = urlParams.get('name');
+    
+    if (emailConnected === 'true' && email) {
+      // Update UI to show connected state
+      setEmailConnectionStatus({
+        connected: true,
+        emailAddress: email,
+        provider: 'gmail'
+      });
+      
+      // Show success message
+      alert(`✅ Gmail Connected Successfully!\n\nEmail: ${email}\nName: ${name}\n\nNow you can:\n• Process real receipt PDFs from Gmail\n• Automatic AI extraction\n• Instant ledger updates\n• Smart bank statement matching\n\nTry the "Check Emails" button to process receipts!`);
+      
+      // Clear URL parameters
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
   }, []);
 
   const checkEmailConnection = async () => {
