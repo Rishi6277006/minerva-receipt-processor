@@ -9,13 +9,35 @@ if (process.env.OPENAI_API_KEY && process.env.OPENAI_API_KEY !== 'your-openai-ap
 }
 
 export async function parseReceiptWithOpenAI(receiptText: string) {
+  console.log('Parsing receipt text:', receiptText.substring(0, 200) + '...');
+  
   // If OpenAI is not available, use basic parsing
   if (!openai) {
     console.log('OpenAI not configured, using basic parsing');
     return parseReceiptBasic(receiptText);
   }
 
-  const prompt = `Extract the following details from this receipt text in JSON format: vendor, amount, transactionDate (YYYY-MM-DD), category (e.g., Food, Transport, Utilities), description. If a field is not found, use null. Receipt text: ${receiptText}`;
+  const prompt = `You are an expert receipt parser. Extract the following details from this receipt text in JSON format:
+
+IMPORTANT: Look for the FINAL TOTAL or GRAND TOTAL amount, not individual line items. The amount should be the total amount paid.
+
+Fields to extract:
+- vendor: The store/restaurant name (usually at the top)
+- amount: The FINAL TOTAL amount paid (look for "Total:", "Grand Total:", "Amount Due:", etc.)
+- transactionDate: Date in YYYY-MM-DD format
+- category: One of: Food & Beverage, Shopping, Transportation, Groceries, Entertainment, Home, General
+- description: Brief description of items purchased
+
+Rules:
+1. For amount: Find the FINAL TOTAL, not individual items
+2. For vendor: Use the business name, not address or phone
+3. For date: Convert any date format to YYYY-MM-DD
+4. If a field is unclear, use null
+
+Receipt text:
+${receiptText}
+
+Return only valid JSON with these exact field names.`;
 
   const chatCompletion = await openai.chat.completions.create({
     messages: [{ role: 'user', content: prompt }],
@@ -25,7 +47,10 @@ export async function parseReceiptWithOpenAI(receiptText: string) {
 
   const content = chatCompletion.choices[0].message.content;
   if (content) {
-    return JSON.parse(content);
+    console.log('OpenAI response:', content);
+    const parsed = JSON.parse(content);
+    console.log('Parsed result:', parsed);
+    return parsed;
   } else {
     throw new Error("Failed to parse receipt with OpenAI");
   }
@@ -41,10 +66,13 @@ function parseReceiptBasic(receiptText: string) {
   let category = 'General';
   let description = '';
 
-  // Extract amount - look for patterns like "AMOUNT 84.80", "Total: $25.50", etc.
+  // Extract amount - look for FINAL TOTAL patterns
   const amountPatterns = [
-    /AMOUNT\s+(\d+\.?\d*)/i,
     /Total[:\s]*\$?(\d+\.?\d*)/i,
+    /Grand Total[:\s]*\$?(\d+\.?\d*)/i,
+    /Amount Due[:\s]*\$?(\d+\.?\d*)/i,
+    /Final Total[:\s]*\$?(\d+\.?\d*)/i,
+    /AMOUNT\s+(\d+\.?\d*)/i,
     /Balance[:\s]*\$?(\d+\.?\d*)/i,
     /Amount[:\s]*\$?(\d+\.?\d*)/i
   ];
