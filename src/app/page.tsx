@@ -151,33 +151,30 @@ export default function Dashboard() {
         button.innerHTML = '<RefreshCw className="h-4 w-4 mr-2 animate-spin" /> Connecting...';
       }
 
-      // Simulate OAuth flow with real steps
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Step 1: Connecting to Google
-      if (button) {
-        button.innerHTML = '<RefreshCw className="h-4 w-4 mr-2 animate-spin" /> Authorizing...';
-      }
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      // Step 2: Processing authorization
-      if (button) {
-        button.innerHTML = '<RefreshCw className="h-4 w-4 mr-2 animate-spin" /> Processing...';
-      }
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Step 3: Success - update UI to show connected state
-      setEmailConnectionStatus({
-        connected: true,
-        emailAddress: 'demo-user@gmail.com',
-        provider: 'gmail'
+      // Call the REAL OAuth endpoint
+      const response = await fetch('/api/test-backend', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          action: 'generateAuthUrl',
+          userId: 'demo-user'
+        })
       });
       
-      // Show success message
-      alert('✅ Gmail Connected Successfully!\n\nEmail: demo-user@gmail.com\n\nNow you can:\n• Process real receipt PDFs from Gmail\n• Automatic AI extraction\n• Instant ledger updates\n• Smart bank statement matching\n\nTry the "Check Emails" button to process receipts!');
+      const result = await response.json();
+      
+      if (result.result?.data?.authUrl) {
+        // Redirect to REAL Google OAuth
+        window.location.href = result.result.data.authUrl;
+      } else if (result.error) {
+        // Show error message
+        alert(`❌ OAuth Error: ${result.error.message || 'Failed to generate OAuth URL'}`);
+      } else {
+        alert('❌ Failed to connect Gmail. Please try again.');
+      }
       
     } catch (error) {
-      console.error('Error in OAuth demo:', error);
+      console.error('Error connecting Gmail:', error);
       alert('❌ Connection failed. Please try again.');
     } finally {
       // Reset button
