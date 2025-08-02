@@ -70,28 +70,26 @@ export async function parseCSVWithOpenAI(csvData: string) {
 CSV Data:
 ${csvData}
 
-Instructions:
-1. Parse each row as a separate transaction
-2. Handle different CSV formats including:
-   - Single "Amount" column with "Type" column
-   - Separate "Deposits" and "Withdrawls" columns
-   - Any other bank statement format
-3. Extract: date, description, amount, type (DEBIT/CREDIT)
-4. Clean and normalize the data
-5. Return an array of transaction objects
+CRITICAL INSTRUCTIONS:
+1. This CSV has columns: Date, Description, Deposits, Withdrawls, Balance
+2. Parse each row that has either Deposits > 0 OR Withdrawls > 0
+3. For each row:
+   - If Deposits > 0: Create a CREDIT transaction with the Deposits amount
+   - If Withdrawls > 0: Create a DEBIT transaction with the Withdrawls amount
+   - Use the exact Date and Description from the CSV
+   - Convert dates from "DD-Mon-YYYY" format to "YYYY-MM-DD"
+
+EXAMPLES:
+- Row: "20-Aug-2020,Cheque,3391.02,0,83839.3" → CREDIT transaction with amount 3391.02
+- Row: "21-Aug-2020,ATM,0,82961.17,231683.5" → DEBIT transaction with amount 82961.17
 
 Rules:
-- For amount: Remove currency symbols and convert to number
-- For date: Convert to YYYY-MM-DD format (handle DD-Mon-YYYY format)
-- For type: 
-  * If there's a "Type" column, use it directly
-  * If there are separate "Deposits" and "Withdrawls" columns:
-    - Use Deposits amount for CREDIT transactions
-    - Use Withdrawls amount for DEBIT transactions
-    - Skip rows where both are 0
-- For description: Clean up the text, remove extra spaces
-- Skip header rows and empty rows
-- Handle date formats like "20-Aug-2020" → "2020-08-20"
+- Use EXACT amounts from Deposits/Withdrawls columns
+- Use EXACT descriptions from Description column
+- Convert dates: "20-Aug-2020" → "2020-08-20"
+- Skip rows where both Deposits and Withdrawls are 0
+- Skip the header row
+- Return only valid JSON array
 
 Return a JSON array with this structure:
 [
@@ -245,6 +243,8 @@ function parseCSVBasic(csvData: string) {
   const hasDeposits = headers.some(h => h.includes('deposit'));
   const hasWithdrawals = headers.some(h => h.includes('withdrawal') || h.includes('withdrawl'));
   
+  console.log('Basic parser - hasDeposits:', hasDeposits, 'hasWithdrawals:', hasWithdrawals);
+  
   if (hasDeposits && hasWithdrawals) {
     // Handle separate deposits/withdrawals format
     const dateIndex = headers.findIndex(h => h.includes('date'));
@@ -264,22 +264,26 @@ function parseCSVBasic(csvData: string) {
       
       // Handle deposits (CREDIT)
       if (!isNaN(deposits) && deposits > 0 && date && description) {
-        transactions.push({
+        const transaction = {
           date: convertDate(date),
           description,
           amount: deposits,
           type: 'CREDIT'
-        });
+        };
+        console.log('Basic parser - Created CREDIT transaction:', transaction);
+        transactions.push(transaction);
       }
       
       // Handle withdrawals (DEBIT)
       if (!isNaN(withdrawals) && withdrawals > 0 && date && description) {
-        transactions.push({
+        const transaction = {
           date: convertDate(date),
           description,
           amount: withdrawals,
           type: 'DEBIT'
-        });
+        };
+        console.log('Basic parser - Created DEBIT transaction:', transaction);
+        transactions.push(transaction);
       }
     }
   } else {
