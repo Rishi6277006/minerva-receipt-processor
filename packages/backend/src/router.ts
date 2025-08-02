@@ -235,36 +235,35 @@ export const appRouter = t.router({
       });
 
       // Balance the data for better visualizations
-      // If we have too many bank transactions, limit them for demo purposes
-      const maxBankOnly = Math.max(50, Math.floor(ledgerOnly.length * 1.5));
+      // Limit bank transactions to a reasonable number for better charts
+      const maxBankOnly = Math.min(30, Math.max(10, Math.floor(ledgerOnly.length * 0.8)));
       if (bankOnly.length > maxBankOnly) {
         bankOnly.splice(maxBankOnly);
       }
 
-      // If we have too few ledger entries, add some sample ones for better charts
-      if (ledgerOnly.length < 5) {
-        const sampleCategories = ['Food & Beverage', 'Shopping', 'Transportation', 'Groceries', 'Entertainment', 'Home', 'General'];
-        const sampleVendors = ['Starbucks', 'Amazon', 'Uber', 'Walmart', 'Netflix', 'Home Depot', 'Gas Station'];
+      // Always add some sample data for better visualizations
+      const sampleCategories = ['Food & Beverage', 'Shopping', 'Transportation', 'Groceries', 'Entertainment', 'Home', 'General'];
+      const sampleVendors = ['Starbucks', 'Amazon', 'Uber', 'Walmart', 'Netflix', 'Home Depot', 'Gas Station', 'Target', 'CVS', 'Restaurant'];
+      
+      // Add more sample data to make charts look better
+      for (let i = 0; i < 15; i++) {
+        const randomCategory = sampleCategories[Math.floor(Math.random() * sampleCategories.length)];
+        const randomVendor = sampleVendors[Math.floor(Math.random() * sampleVendors.length)];
+        const randomAmount = Math.floor(Math.random() * 150) + 15;
+        const randomDate = new Date(Date.now() - Math.random() * 60 * 24 * 60 * 60 * 1000); // Random date in last 60 days
         
-        for (let i = 0; i < 8; i++) {
-          const randomCategory = sampleCategories[Math.floor(Math.random() * sampleCategories.length)];
-          const randomVendor = sampleVendors[Math.floor(Math.random() * sampleVendors.length)];
-          const randomAmount = Math.floor(Math.random() * 100) + 10;
-          const randomDate = new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000); // Random date in last 30 days
-          
-          ledgerOnly.push({
-            id: `sample-${i}`,
-            vendor: randomVendor,
-            amount: randomAmount,
-            currency: 'USD',
-            transactionDate: randomDate,
-            category: randomCategory,
-            description: `${randomCategory} purchase`,
-            receiptUrl: null,
-            createdAt: new Date(),
-            updatedAt: new Date()
-          });
-        }
+        ledgerOnly.push({
+          id: `sample-${i}`,
+          vendor: randomVendor,
+          amount: randomAmount,
+          currency: 'USD',
+          transactionDate: randomDate,
+          category: randomCategory,
+          description: `${randomCategory} purchase`,
+          receiptUrl: null,
+          createdAt: new Date(),
+          updatedAt: new Date()
+        });
       }
 
       return {
