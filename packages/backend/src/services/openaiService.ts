@@ -59,6 +59,10 @@ Return only valid JSON with these exact field names.`;
 export async function parseCSVWithOpenAI(csvData: string) {
   console.log('Parsing CSV data:', csvData.substring(0, 200) + '...');
   
+  // Force using basic parsing for better accuracy with this format
+  console.log('Using basic CSV parsing for better accuracy');
+  return parseCSVBasic(csvData);
+  
   // If OpenAI is not available, use basic parsing
   if (!openai) {
     console.log('OpenAI not configured, using basic CSV parsing');

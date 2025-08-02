@@ -26,85 +26,50 @@ interface BankTransaction {
 }
 
 export default function ComparePage() {
-  const [ledgerData, setLedgerData] = useState<LedgerEntry[]>([]);
-  const [bankData, setBankData] = useState<BankTransaction[]>([]);
+  const [comparisonData, setComparisonData] = useState<{
+    matched: Array<{ ledger: any; bank: any }>;
+    ledgerOnly: any[];
+    bankOnly: any[];
+  }>({ matched: [], ledgerOnly: [], bankOnly: [] });
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Fetch real data from backend
+  // Fetch comparison data from backend
   useEffect(() => {
-    const fetchData = async () => {
+    const fetchComparisonData = async () => {
       try {
         setIsLoading(true);
         
-        // Fetch ledger data
-        const ledgerResponse = await fetch('/api/ledger');
-        const ledgerResult = await ledgerResponse.json();
-        setLedgerData(ledgerResult.result?.data || []);
-
-        // Fetch bank data
-        const bankResponse = await fetch('/api/bank');
-        const bankResult = await bankResponse.json();
-        setBankData(bankResult.result?.data || []);
+        const response = await fetch('/api/compare');
+        const result = await response.json();
+        
+        if (result.error) {
+          throw new Error(result.error);
+        }
+        
+        setComparisonData(result.result?.data || result.data || { matched: [], ledgerOnly: [], bankOnly: [] });
 
       } catch (err) {
-        console.error('Error fetching data:', err);
+        console.error('Error fetching comparison data:', err);
         setError('Failed to load comparison data');
       } finally {
         setIsLoading(false);
       }
     };
 
-    fetchData();
+    fetchComparisonData();
   }, []);
 
-  // Calculate comparison data
-  const calculateComparison = () => {
-    const matched: any[] = [];
-    const ledgerOnly: LedgerEntry[] = [];
-    const bankOnly: BankTransaction[] = [];
-
-    // Simple matching logic (can be enhanced)
-    ledgerData.forEach(ledgerEntry => {
-      const matchingBank = bankData.find(bankTx => 
-        Math.abs(bankTx.amount - ledgerEntry.amount) < 0.01 && // Same amount
-        Math.abs(new Date(bankTx.transactionDate).getTime() - new Date(ledgerEntry.transactionDate).getTime()) < 7 * 24 * 60 * 60 * 1000 // Within 7 days
-      );
-
-      if (matchingBank) {
-        matched.push({
-          id: ledgerEntry.id,
-          vendor: ledgerEntry.vendor,
-          amount: ledgerEntry.amount,
-          date: ledgerEntry.transactionDate,
-          type: 'ledger',
-          bankMatch: matchingBank
-        });
-      } else {
-        ledgerOnly.push(ledgerEntry);
-      }
-    });
-
-    // Find bank-only transactions
-    bankData.forEach(bankTx => {
-      const isMatched = matched.some(match => match.bankMatch?.id === bankTx.id);
-      if (!isMatched) {
-        bankOnly.push(bankTx);
-      }
-    });
-
-    return { matched, ledgerOnly, bankOnly };
-  };
-
-  const { matched, ledgerOnly, bankOnly } = calculateComparison();
+  const { matched, ledgerOnly, bankOnly } = comparisonData;
   
   const summary = {
-    totalTransactions: ledgerData.length + bankData.length,
+    totalTransactions: ledgerOnly.length + bankOnly.length + matched.length,
     matchedCount: matched.length,
     unmatchedCount: ledgerOnly.length + bankOnly.length,
-    matchRate: ledgerData.length > 0 ? Math.round((matched.length / ledgerData.length) * 100) : 0,
-    totalAmount: ledgerData.reduce((sum, entry) => sum + entry.amount, 0) + 
-                 bankData.reduce((sum, tx) => sum + tx.amount, 0)
+    matchRate: (ledgerOnly.length + matched.length) > 0 ? Math.round((matched.length / (ledgerOnly.length + matched.length)) * 100) : 0,
+    totalAmount: ledgerOnly.reduce((sum: number, entry: any) => sum + entry.amount, 0) + 
+                 bankOnly.reduce((sum: number, tx: any) => sum + tx.amount, 0) +
+                 matched.reduce((sum: number, match: any) => sum + match.ledger.amount + match.bank.amount, 0)
   };
 
   if (isLoading) {
@@ -215,13 +180,13 @@ export default function ComparePage() {
                     <CardContent>
                       <div className="space-y-3">
                         {matched.slice(0, 3).map((item) => (
-                          <div key={item.id} className="flex items-center justify-between p-3 bg-white rounded-lg">
+                          <div key={item.ledger.id} className="flex items-center justify-between p-3 bg-white rounded-lg">
                             <div>
-                              <p className="font-medium text-gray-900">{item.vendor}</p>
-                              <p className="text-sm text-gray-500">{item.date}</p>
+                              <p className="font-medium text-gray-900">{item.ledger.vendor}</p>
+                              <p className="text-sm text-gray-500">{new Date(item.ledger.transactionDate).toLocaleDateString()}</p>
                             </div>
                             <div className="text-right">
-                              <p className="font-bold text-gray-900">${item.amount}</p>
+                              <p className="font-bold text-gray-900">${item.ledger.amount}</p>
                               <Badge className="bg-green-100 text-green-800 text-xs">Matched</Badge>
                             </div>
                           </div>
@@ -309,10 +274,10 @@ export default function ComparePage() {
                   </TableHeader>
                   <TableBody>
                     {matched.map((item) => (
-                      <TableRow key={item.id}>
-                        <TableCell className="font-medium">{item.vendor}</TableCell>
-                        <TableCell>${item.amount}</TableCell>
-                        <TableCell>{item.date}</TableCell>
+                      <TableRow key={item.ledger.id}>
+                        <TableCell className="font-medium">{item.ledger.vendor}</TableCell>
+                        <TableCell>${item.ledger.amount}</TableCell>
+                        <TableCell>{new Date(item.ledger.transactionDate).toLocaleDateString()}</TableCell>
                         <TableCell>
                           <Badge className="bg-green-100 text-green-800">
                             <CheckCircle className="h-3 w-3 mr-1" />
