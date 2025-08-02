@@ -374,10 +374,10 @@ export const appRouter = t.router({
           transactionDate: randomDate,
           category: randomCategory,
           description: `${randomCategory} purchase`,
-          receiptUrl: null,
-          createdAt: new Date(),
-          updatedAt: new Date()
-        });
+          receiptUrl: 'sample-data',
+          createdAt: randomDate,
+          updatedAt: randomDate
+        } as any);
       }
 
       return {
@@ -412,7 +412,8 @@ export const appRouter = t.router({
             transactionDate: new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000),
             category: receipt.category,
             description: receipt.description,
-            receiptUrl: null
+            receiptUrl: 'sample-data',
+            userId: null
           }
         });
         createdReceipts.push(created);
