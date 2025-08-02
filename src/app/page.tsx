@@ -174,7 +174,17 @@ export default function Dashboard() {
 
       // REAL Google OAuth - Get credentials from environment
       const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
-      const redirectUri = 'https://minerva-receipt-processor-frontend-2jdmzwe4c.vercel.app/api/auth/gmail/callback';
+      
+      // Try different redirect URIs to match Google Cloud Console
+      const possibleRedirectUris = [
+        'https://minerva-receipt-processor-frontend-2jdmzwe4c.vercel.app/api/auth/gmail/callback',
+        'https://minerva-receipt-processor-frontend-2jdmzwe4c.vercel.app/auth/gmail/callback',
+        'https://minerva-receipt-processor-frontend-2jdmzwe4c.vercel.app/',
+        'http://localhost:3000/api/auth/gmail/callback'
+      ];
+      
+      const redirectUri = possibleRedirectUris[0]; // Use the first one for now
+      
       const scopes = [
         'https://www.googleapis.com/auth/gmail.readonly',
         'https://www.googleapis.com/auth/userinfo.email'
@@ -185,6 +195,7 @@ export default function Dashboard() {
         return;
       }
 
+      // Log the OAuth URL for debugging
       const authUrl = `https://accounts.google.com/oauth/authorize?` +
         `client_id=${encodeURIComponent(clientId)}` +
         `&redirect_uri=${encodeURIComponent(redirectUri)}` +
@@ -192,6 +203,10 @@ export default function Dashboard() {
         `&response_type=code` +
         `&access_type=offline` +
         `&prompt=consent`;
+
+      console.log('OAuth URL:', authUrl);
+      console.log('Client ID:', clientId);
+      console.log('Redirect URI:', redirectUri);
 
       // REDIRECT TO REAL GOOGLE OAUTH
       window.location.href = authUrl;
