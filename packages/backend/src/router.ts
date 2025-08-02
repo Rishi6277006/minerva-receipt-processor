@@ -7,6 +7,7 @@ import multer from 'multer';
 import { createWriteStream } from 'fs';
 import { pipeline } from 'stream/promises';
 import { emailService } from './services/emailService';
+import { oauthService } from './services/oauthService';
 
 const t = initTRPC.context<Context>().create();
 
@@ -209,6 +210,101 @@ export const appRouter = t.router({
         throw new Error(`Failed to check emails: ${error}`);
       }
     }),
+
+    // New OAuth routes
+    generateAuthUrl: t.procedure
+      .input(z.object({ userId: z.string() }))
+      .mutation(async ({ input }) => {
+        try {
+          const authUrl = oauthService.generateAuthUrl();
+          return { authUrl };
+        } catch (error) {
+          console.error('Error generating auth URL:', error);
+          throw new Error('Failed to generate authorization URL');
+        }
+      }),
+
+    handleCallback: t.procedure
+      .input(z.object({ 
+        code: z.string(),
+        userId: z.string()
+      }))
+      .mutation(async ({ input }) => {
+        try {
+          // Exchange code for tokens
+          const tokens = await oauthService.exchangeCodeForTokens(input.code);
+          
+          // Get user info from Google
+          const oauth2Client = new (require('googleapis').google.auth.OAuth2)(
+            process.env.GOOGLE_CLIENT_ID,
+            process.env.GOOGLE_CLIENT_SECRET,
+            process.env.GOOGLE_REDIRECT_URI
+          );
+          
+          oauth2Client.setCredentials(tokens);
+          const gmail = require('googleapis').google.gmail({ version: 'v1', auth: oauth2Client });
+          
+          // Get user's email address
+          const profile = await gmail.users.getProfile({ userId: 'me' });
+          const emailAddress = profile.data.emailAddress;
+          
+          // Store the connection
+          await oauthService.storeEmailConnection(input.userId, emailAddress, tokens);
+          
+          return {
+            success: true,
+            emailAddress,
+            message: `Successfully connected ${emailAddress} to Minerva`
+          };
+        } catch (error) {
+          console.error('Error handling OAuth callback:', error);
+          throw new Error('Failed to complete email connection');
+        }
+      }),
+
+    checkForReceiptsForUser: t.procedure
+      .input(z.object({ userId: z.string() }))
+      .mutation(async ({ input }) => {
+        try {
+          const result = await emailService.checkForReceiptEmailsForUser(input.userId);
+          return {
+            success: true,
+            receiptsAdded: result.receiptsAdded,
+            message: result.message
+          };
+        } catch (error) {
+          console.error('Error checking emails for user:', error);
+          throw new Error(`Failed to check emails: ${error}`);
+        }
+      }),
+
+    getConnectionStatus: t.procedure
+      .input(z.object({ userId: z.string() }))
+      .query(async ({ input }) => {
+        try {
+          const connection = await oauthService.getEmailConnection(input.userId);
+          return {
+            connected: !!connection,
+            emailAddress: connection?.emailAddress || null,
+            provider: connection?.emailProvider || null
+          };
+        } catch (error) {
+          console.error('Error getting connection status:', error);
+          return { connected: false, emailAddress: null, provider: null };
+        }
+      }),
+
+    disconnect: t.procedure
+      .input(z.object({ userId: z.string() }))
+      .mutation(async ({ input }) => {
+        try {
+          await oauthService.disconnectEmail(input.userId);
+          return { success: true, message: 'Email disconnected successfully' };
+        } catch (error) {
+          console.error('Error disconnecting email:', error);
+          throw new Error('Failed to disconnect email');
+        }
+      }),
 
     getStatus: t.procedure.query(() => {
       return {

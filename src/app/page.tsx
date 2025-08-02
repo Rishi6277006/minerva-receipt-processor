@@ -32,7 +32,8 @@ import {
   RefreshCw,
   Settings,
   Bell,
-  Star
+  Star,
+  Mail
 } from 'lucide-react';
 import React from 'react'; // Added missing import for React
 
@@ -47,6 +48,11 @@ export default function Dashboard() {
   const [bankData, setBankData] = useState<any[]>([]);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [showEmailNotification, setShowEmailNotification] = useState(false);
+  const [emailConnectionStatus, setEmailConnectionStatus] = useState<{
+    connected: boolean;
+    emailAddress: string | null;
+    provider: string | null;
+  }>({ connected: false, emailAddress: null, provider: null });
 
   const fetchData = async () => {
     try {
@@ -114,7 +120,49 @@ export default function Dashboard() {
 
   useEffect(() => {
     fetchData();
+    checkEmailConnection();
   }, []);
+
+  const checkEmailConnection = async () => {
+    try {
+      const response = await fetch('/api/test-backend', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          action: 'getConnectionStatus',
+          userId: 'demo-user'
+        })
+      });
+      const result = await response.json();
+      if (result.result?.data) {
+        setEmailConnectionStatus(result.result.data);
+      }
+    } catch (error) {
+      console.error('Error checking email connection:', error);
+    }
+  };
+
+  const connectGmail = async () => {
+    try {
+      const response = await fetch('/api/test-backend', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          action: 'generateAuthUrl',
+          userId: 'demo-user'
+        })
+      });
+      
+      const result = await response.json();
+      if (result.result?.data?.authUrl) {
+        // Redirect to Google OAuth
+        window.location.href = result.result.data.authUrl;
+      }
+    } catch (error) {
+      console.error('Error generating auth URL:', error);
+      alert('Failed to connect Gmail. Please try again.');
+    }
+  };
 
   const handleRefresh = () => {
     fetchData();
@@ -242,6 +290,24 @@ export default function Dashboard() {
             <p className="text-slate-600">Track your spending and income with AI-powered insights</p>
           </div>
           <div className="flex items-center gap-2">
+            {/* Email Connection Status */}
+            {emailConnectionStatus.connected ? (
+              <div className="flex items-center gap-2 bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm">
+                <CheckCircle className="h-4 w-4" />
+                <span>Connected: {emailConnectionStatus.emailAddress}</span>
+              </div>
+            ) : (
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={connectGmail}
+                className="bg-blue-50 border-blue-200 text-blue-700 hover:bg-blue-100"
+              >
+                <Mail className="h-4 w-4 mr-2" />
+                Connect Gmail
+              </Button>
+            )}
+            
             <Button 
               variant="default" 
               size="sm"
