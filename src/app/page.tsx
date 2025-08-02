@@ -34,6 +34,7 @@ import {
   Bell,
   Star
 } from 'lucide-react';
+import React from 'react'; // Added missing import for React
 
 export default function Dashboard() {
   const [totalSpent, setTotalSpent] = useState(0);
@@ -47,62 +48,64 @@ export default function Dashboard() {
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   const fetchData = async () => {
-      try {
-        // Fetch ledger data
-        const ledgerResponse = await fetch('/api/ledger');
-        const ledgerResult = await ledgerResponse.json();
-        setLedgerData(ledgerResult.data || []);
+    try {
+      setIsRefreshing(true);
+      // Fetch ledger data
+      const ledgerResponse = await fetch('/api/ledger');
+      const ledgerResult = await ledgerResponse.json();
+      setLedgerData(ledgerResult.data || []);
 
-        // Fetch bank data
-        const bankResponse = await fetch('/api/bank');
-        const bankResult = await bankResponse.json();
-        setBankData(bankResult.data || []);
+      // Fetch bank data
+      const bankResponse = await fetch('/api/bank');
+      const bankResult = await bankResponse.json();
+      setBankData(bankResult.data || []);
 
-        // Calculate totals
-        const spent = (ledgerResult.data || []).reduce((sum: number, entry: any) => sum + entry.amount, 0);
-        setTotalSpent(spent);
+      // Calculate totals
+      const spent = (ledgerResult.data || []).reduce((sum: number, entry: any) => sum + entry.amount, 0);
+      setTotalSpent(spent);
 
-        const income = (bankResult.data || [])
-          .filter((tx: any) => tx.type === 'CREDIT')
-          .reduce((sum: number, tx: any) => sum + tx.amount, 0);
-        setTotalIncome(income);
+      const income = (bankResult.data || [])
+        .filter((tx: any) => tx.type === 'CREDIT')
+        .reduce((sum: number, tx: any) => sum + tx.amount, 0);
+      setTotalIncome(income);
 
-        // Category breakdown
-        const categories: Record<string, number> = {};
-        (ledgerResult.data || []).forEach((entry: any) => {
-          categories[entry.category] = (categories[entry.category] || 0) + entry.amount;
-        });
-        setCategoryBreakdown(categories);
+      // Category breakdown
+      const categories: Record<string, number> = {};
+      (ledgerResult.data || []).forEach((entry: any) => {
+        categories[entry.category] = (categories[entry.category] || 0) + entry.amount;
+      });
+      setCategoryBreakdown(categories);
 
-        // Monthly trend
-        const monthly: Record<string, number> = {};
-        (ledgerResult.data || []).forEach((entry: any) => {
-          const month = new Date(entry.transactionDate).toLocaleDateString('en-US', { month: 'short' });
-          monthly[month] = (monthly[month] || 0) + entry.amount;
-        });
-        setMonthlyTrend(monthly);
+      // Monthly trend
+      const monthly: Record<string, number> = {};
+      (ledgerResult.data || []).forEach((entry: any) => {
+        const month = new Date(entry.transactionDate).toLocaleDateString('en-US', { month: 'short' });
+        monthly[month] = (monthly[month] || 0) + entry.amount;
+      });
+      setMonthlyTrend(monthly);
 
-      } catch (error) {
-        console.error('Error fetching data:', error);
-        // Fallback to mock data if backend is not available
-        setLedgerData([
-          { id: '1', vendor: 'Starbucks Coffee', amount: 12.50, category: 'Food & Beverage', transactionDate: '2024-01-15', description: 'Venti Caramel Macchiato' },
-          { id: '2', vendor: 'Amazon.com', amount: 89.99, category: 'Shopping', transactionDate: '2024-01-16', description: 'Wireless headphones' },
-          { id: '3', vendor: 'Shell Gas Station', amount: 45.67, category: 'Transportation', transactionDate: '2024-01-17', description: 'Gas fill-up' },
-        ]);
-        setBankData([
-          { id: '1', description: 'STARBUCKS COFFEE', amount: 12.50, type: 'DEBIT', transactionDate: '2024-01-15' },
-          { id: '2', description: 'AMAZON.COM', amount: 89.99, type: 'DEBIT', transactionDate: '2024-01-16' },
-          { id: '3', description: 'SALARY DEPOSIT', amount: 2500.00, type: 'CREDIT', transactionDate: '2024-01-25' },
-        ]);
-        setTotalSpent(148.16);
-        setTotalIncome(2500.00);
-      } finally {
-        setIsLoading(false);
-        setIsRefreshing(false);
-      }
-    };
+    } catch (error) {
+      console.error('Error fetching data:', error);
+      // Fallback to mock data if backend is not available
+      setLedgerData([
+        { id: '1', vendor: 'Starbucks Coffee', amount: 12.50, category: 'Food & Beverage', transactionDate: '2024-01-15', description: 'Venti Caramel Macchiato' },
+        { id: '2', vendor: 'Amazon.com', amount: 89.99, category: 'Shopping', transactionDate: '2024-01-16', description: 'Wireless headphones' },
+        { id: '3', vendor: 'Shell Gas Station', amount: 45.67, category: 'Transportation', transactionDate: '2024-01-17', description: 'Gas fill-up' },
+      ]);
+      setBankData([
+        { id: '1', description: 'STARBUCKS COFFEE', amount: 12.50, type: 'DEBIT', transactionDate: '2024-01-15' },
+        { id: '2', description: 'AMAZON.COM', amount: 89.99, type: 'DEBIT', transactionDate: '2024-01-16' },
+        { id: '3', description: 'SALARY DEPOSIT', amount: 2500.00, type: 'CREDIT', transactionDate: '2024-01-25' },
+      ]);
+      setTotalSpent(148.16);
+      setTotalIncome(2500.00);
+    } finally {
+      setIsLoading(false);
+      setIsRefreshing(false);
+    }
+  };
 
+  useEffect(() => {
     fetchData();
   }, []);
 
@@ -199,7 +202,7 @@ export default function Dashboard() {
           <div className="flex items-center justify-center h-64">
             <div className="text-center">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
-              <p className="text-slate-600">Loading your financial insights...</p>
+              <p className="text-slate-600">Loading dashboard...</p>
             </div>
           </div>
         </div>
@@ -210,13 +213,13 @@ export default function Dashboard() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
       <div className="container mx-auto px-4 py-8">
-        {/* Header with Actions */}
-        <div className="mb-8 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
           <div>
-            <h1 className="text-4xl font-bold text-slate-800 mb-2">Financial Dashboard</h1>
-            <p className="text-slate-600">Your complete financial overview at a glance</p>
+            <h1 className="text-3xl font-bold text-slate-800 mb-2">Financial Dashboard</h1>
+            <p className="text-slate-600">Track your spending and income with AI-powered insights</p>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
             <Button 
               variant="outline" 
               size="sm"
@@ -359,16 +362,15 @@ export default function Dashboard() {
           <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-lg hover:shadow-xl transition-all duration-300 group relative overflow-hidden">
             <div className="absolute inset-0 bg-gradient-to-r from-orange-500/10 to-red-500/10 opacity-0 group-hover:opacity-100 transition-opacity"></div>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 relative z-10">
-              <CardTitle className="text-sm font-medium text-slate-600">Unmatched</CardTitle>
+              <CardTitle className="text-sm font-medium text-slate-600">Unmatched Items</CardTitle>
               <AlertCircle className="h-4 w-4 text-orange-500 group-hover:scale-110 transition-transform" />
             </CardHeader>
             <CardContent className="relative z-10">
               <div className="text-2xl font-bold text-slate-800">{bankOnlyCount + ledgerOnlyCount}</div>
-              <div className="w-full bg-slate-200 rounded-full h-2 mt-2">
-                <div 
-                  className="h-2 bg-orange-500 rounded-full transition-all duration-500"
-                  style={{ width: `${((bankOnlyCount + ledgerOnlyCount) / (matchedCount + bankOnlyCount + ledgerOnlyCount)) * 100}%` }}
-                ></div>
+              <div className="flex items-center gap-2 mt-1">
+                <p className="text-xs text-slate-600">
+                  {ledgerOnlyCount} receipts, {bankOnlyCount} bank
+                </p>
               </div>
               <p className="text-xs text-slate-500 mt-1">Need attention</p>
             </CardContent>
@@ -377,18 +379,18 @@ export default function Dashboard() {
 
         {/* Main Content Tabs */}
         <Tabs defaultValue="overview" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4 bg-white/80 backdrop-blur-sm border-0 shadow-lg">
+          <TabsList className="grid w-full grid-cols-4 bg-white/80 backdrop-blur-sm">
             <TabsTrigger value="overview" className="data-[state=active]:bg-blue-500 data-[state=active]:text-white">
-              <BarChart3 className="h-4 w-4 mr-2" />
+              <Activity className="h-4 w-4 mr-2" />
               Overview
             </TabsTrigger>
-            <TabsTrigger value="categories" className="data-[state=active]:bg-blue-500 data-[state=active]:text-white">
-              <PieChart className="h-4 w-4 mr-2" />
-              Categories
+            <TabsTrigger value="analytics" className="data-[state=active]:bg-blue-500 data-[state=active]:text-white">
+              <BarChart3 className="h-4 w-4 mr-2" />
+              Analytics
             </TabsTrigger>
-            <TabsTrigger value="trends" className="data-[state=active]:bg-blue-500 data-[state=active]:text-white">
-              <Activity className="h-4 w-4 mr-2" />
-              Trends
+            <TabsTrigger value="timeline" className="data-[state=active]:bg-blue-500 data-[state=active]:text-white">
+              <Calendar className="h-4 w-4 mr-2" />
+              Timeline
             </TabsTrigger>
             <TabsTrigger value="insights" className="data-[state=active]:bg-blue-500 data-[state=active]:text-white">
               <Sparkles className="h-4 w-4 mr-2" />
@@ -403,309 +405,197 @@ export default function Dashboard() {
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <Receipt className="h-5 w-5 text-blue-500" />
-                    Recent Receipts
+                    Recent Transactions
                   </CardTitle>
-                  <CardDescription>Your latest expense entries</CardDescription>
+                  <CardDescription>Latest spending activity</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {ledgerData.slice(0, 5).map((entry, index) => (
+                    <div key={index} className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
+                      <div className="flex items-center gap-3">
+                        <div className={`p-2 rounded-full ${getCategoryColor(entry.category)}`}>
+                          {React.createElement(getCategoryIcon(entry.category), { className: 'h-4 w-4 text-white' })}
+                        </div>
+                        <div>
+                          <p className="font-medium text-slate-800">{entry.vendor}</p>
+                          <p className="text-sm text-slate-600">{entry.category}</p>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <p className="font-bold text-slate-800">${entry.amount.toFixed(2)}</p>
+                        <p className="text-xs text-slate-500">
+                          {new Date(entry.transactionDate).toLocaleDateString()}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </CardContent>
+              </Card>
+
+              {/* Category Breakdown */}
+              <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-lg">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <PieChart className="h-5 w-5 text-purple-500" />
+                    Category Breakdown
+                  </CardTitle>
+                  <CardDescription>Spending by category</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {Object.entries(categoryBreakdown).map(([category, amount]) => (
+                    <div key={category} className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className={`p-2 rounded-full ${getCategoryColor(category)}`}>
+                          {React.createElement(getCategoryIcon(category), { className: 'h-4 w-4 text-white' })}
+                        </div>
+                        <span className="font-medium text-slate-800">{category}</span>
+                      </div>
+                      <div className="text-right">
+                        <p className="font-bold text-slate-800">${amount.toFixed(2)}</p>
+                        <p className="text-xs text-slate-500">
+                          {((amount / totalSpent) * 100).toFixed(1)}%
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="analytics" className="space-y-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Spending Timeline */}
+              <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-lg">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <TrendingUp className="h-5 w-5 text-green-500" />
+                    Spending Timeline
+                  </CardTitle>
+                  <CardDescription>Daily spending over the last 30 days</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-4">
-                    {ledgerData.slice(0, 5).map((entry) => {
-                      const IconComponent = getCategoryIcon(entry.category);
-                      return (
-                        <div key={entry.id} className="flex items-center justify-between p-3 bg-slate-50 rounded-lg hover:bg-slate-100 transition-all duration-200 hover:shadow-md group">
-                          <div className="flex items-center gap-3">
-                            <div className={`p-2 rounded-lg ${getCategoryColor(entry.category)} group-hover:scale-110 transition-transform`}>
-                              <IconComponent className="h-4 w-4 text-white" />
-                            </div>
-                            <div>
-                              <p className="font-medium text-slate-800">{entry.vendor}</p>
-                              <p className="text-sm text-slate-500">{entry.category}</p>
-                            </div>
-                          </div>
-                          <div className="text-right">
-                            <p className="font-bold text-slate-800">${entry.amount.toFixed(2)}</p>
-                            <p className="text-xs text-slate-500">
-                              {new Date(entry.transactionDate).toLocaleDateString()}
-                            </p>
-                          </div>
-                        </div>
-                      );
-                    })}
+                  <div className="h-64 flex items-end justify-between gap-1">
+                    {timelineData.map((day, index) => (
+                      <div
+                        key={index}
+                        className={`flex-1 bg-gradient-to-t from-blue-500 to-blue-300 rounded-t transition-all duration-300 hover:from-blue-600 hover:to-blue-400 ${
+                          day.isToday ? 'ring-2 ring-blue-500 ring-offset-2' : ''
+                        }`}
+                        style={{
+                          height: `${(day.amount / maxAmount) * 100}%`,
+                          minHeight: '4px'
+                        }}
+                        title={`${day.date.toLocaleDateString()}: $${day.amount.toFixed(2)}`}
+                      ></div>
+                    ))}
+                  </div>
+                  <div className="mt-4 grid grid-cols-3 gap-4 text-center">
+                    <div>
+                      <p className="text-2xl font-bold text-blue-600">${totalSpending.toFixed(2)}</p>
+                      <p className="text-sm text-slate-600">Total 30 Days</p>
+                    </div>
+                    <div>
+                      <p className="text-2xl font-bold text-green-600">${averageSpending.toFixed(2)}</p>
+                      <p className="text-sm text-slate-600">Daily Average</p>
+                    </div>
+                    <div>
+                      <p className="text-2xl font-bold text-purple-600">{timelineData.filter(d => d.amount > 0).length}</p>
+                      <p className="text-sm text-slate-600">Active Days</p>
+                    </div>
                   </div>
                 </CardContent>
               </Card>
 
-              {/* Bank Transactions */}
+              {/* Monthly Trends */}
               <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-lg">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
-                    <CreditCard className="h-5 w-5 text-green-500" />
-                    Bank Activity
+                    <Calendar className="h-5 w-5 text-orange-500" />
+                    Monthly Trends
                   </CardTitle>
-                  <CardDescription>Recent bank transactions</CardDescription>
+                  <CardDescription>Spending patterns by month</CardDescription>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
-                    {bankData.slice(0, 5).map((transaction) => (
-                      <div key={transaction.id} className="flex items-center justify-between p-3 bg-slate-50 rounded-lg hover:bg-slate-100 transition-all duration-200 hover:shadow-md group">
-                        <div className="flex items-center gap-3">
-                          <div className={`p-2 rounded-lg ${transaction.type === 'CREDIT' ? 'bg-green-500' : 'bg-red-500'} group-hover:scale-110 transition-transform`}>
-                            {transaction.type === 'CREDIT' ? (
-                              <TrendingUp className="h-4 w-4 text-white" />
-                            ) : (
-                              <TrendingDown className="h-4 w-4 text-white" />
-                            )}
+                    {Object.entries(monthlyTrend).map(([month, amount]) => (
+                      <div key={month} className="flex items-center justify-between">
+                        <span className="font-medium text-slate-800">{month}</span>
+                        <div className="flex items-center gap-2">
+                          <div className="w-24 bg-slate-200 rounded-full h-2">
+                            <div
+                              className="bg-orange-500 h-2 rounded-full transition-all duration-500"
+                              style={{
+                                width: `${(amount / Math.max(...Object.values(monthlyTrend))) * 100}%`
+                              }}
+                            ></div>
                           </div>
-                          <div>
-                            <p className="font-medium text-slate-800">{transaction.description}</p>
-                            <Badge variant={transaction.type === 'CREDIT' ? 'default' : 'secondary'} className="text-xs">
-                              {transaction.type}
-                            </Badge>
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <p className={`font-bold ${transaction.type === 'CREDIT' ? 'text-green-600' : 'text-red-600'}`}>
-                            {transaction.type === 'CREDIT' ? '+' : '-'}${transaction.amount.toFixed(2)}
-                          </p>
-                          <p className="text-xs text-slate-500">
-                            {new Date(transaction.transactionDate).toLocaleDateString()}
-                          </p>
+                          <span className="font-bold text-slate-800 w-16 text-right">${amount.toFixed(2)}</span>
                         </div>
                       </div>
                     ))}
                   </div>
+                  <div className="mt-6 grid grid-cols-3 gap-4 text-center">
+                    <div className="text-center">
+                      <p className="text-2xl font-bold text-orange-600">
+                        ${Math.max(...Object.values(monthlyTrend)).toFixed(2)}
+                      </p>
+                      <p className="text-sm text-slate-600">Highest Month</p>
+                    </div>
+                    <div className="text-center">
+                      <p className="text-2xl font-bold text-purple-600">
+                        ${(Object.values(monthlyTrend).reduce((a, b) => a + b, 0) / Object.values(monthlyTrend).length).toFixed(2)}
+                      </p>
+                      <p className="text-sm text-slate-600">Average Monthly</p>
+                    </div>
+                    <div className="text-center">
+                      <p className="text-2xl font-bold text-green-600">
+                        {Object.keys(monthlyTrend).length}
+                      </p>
+                      <p className="text-sm text-slate-600">Months Tracked</p>
+                    </div>
+                  </div>
                 </CardContent>
               </Card>
             </div>
+          </TabsContent>
 
-            {/* Spending Timeline */}
+          <TabsContent value="timeline" className="space-y-6">
             <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-lg">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <Activity className="h-5 w-5 text-purple-500" />
-                  Spending Timeline
+                  <Calendar className="h-5 w-5 text-blue-500" />
+                  Transaction Timeline
                 </CardTitle>
-                <CardDescription>Your spending pattern over the last 30 days</CardDescription>
+                <CardDescription>Chronological view of all transactions</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {/* Timeline Chart */}
-                  <div className="relative h-40 bg-gradient-to-r from-slate-50 to-blue-50 rounded-lg p-4">
-                    <div className="absolute inset-0 flex items-end justify-between px-4 pb-4">
-                      {timelineData.map((item, index) => {
-                        const day = item.date;
-                        const isToday = item.isToday;
-                        const isWeekend = item.isWeekend;
-                        const amount = item.amount;
-                        const height = maxAmount > 0 ? (amount / maxAmount) * 80 : 0; // Use 80% of available height
-                        
-                        return (
-                          <div key={index} className="flex flex-col items-center">
-                            <div 
-                              className={`w-4 rounded-sm transition-all duration-300 hover:scale-110 cursor-pointer ${
-                                isToday 
-                                  ? 'bg-blue-600 shadow-lg' 
-                                  : isWeekend 
-                                    ? 'bg-orange-400' 
-                                    : 'bg-slate-400'
-                              }`}
-                              style={{ height: `${Math.max(height, 12)}px` }}
-                              title={`${day.toLocaleDateString()}: $${amount.toFixed(2)}`}
-                            />
-                            {isToday && (
-                              <div className="absolute -top-8 left-1/2 transform -translate-x-1/2">
-                                <div className="bg-blue-600 text-white text-xs px-2 py-1 rounded shadow-lg">
-                                  Today
-                                </div>
-                              </div>
-                            )}
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                  
-                  {/* Legend */}
-                  <div className="flex items-center justify-center gap-6 text-xs text-slate-600">
-                    <div className="flex items-center gap-2">
-                      <div className="w-3 h-3 bg-slate-400 rounded-sm"></div>
-                      <span>Weekdays</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <div className="w-3 h-3 bg-orange-400 rounded-sm"></div>
-                      <span>Weekends</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <div className="w-3 h-3 bg-blue-600 rounded-sm"></div>
-                      <span>Today</span>
-                    </div>
-                  </div>
-                  
-                  {/* Summary Stats */}
-                  <div className="grid grid-cols-3 gap-4 pt-4 border-t border-slate-200">
-                    <div className="text-center">
-                      <p className="text-2xl font-bold text-slate-800">${totalSpending.toFixed(2)}</p>
-                      <p className="text-xs text-slate-500">30-day total</p>
-                    </div>
-                    <div className="text-center">
-                      <p className="text-2xl font-bold text-slate-800">${averageSpending.toFixed(2)}</p>
-                      <p className="text-xs text-slate-500">Daily average</p>
-                    </div>
-                    <div className="text-center">
-                      <p className="text-2xl font-bold text-green-600">↓ 12%</p>
-                      <p className="text-xs text-slate-500">vs last month</p>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="categories" className="space-y-6">
-            <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-lg">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <PieChart className="h-5 w-5 text-purple-500" />
-                  Spending by Category
-                </CardTitle>
-                <CardDescription>Breakdown of your expenses with visual charts</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {Object.entries(categoryBreakdown).map(([category, amount]) => {
-                    const IconComponent = getCategoryIcon(category);
-                    const percentage = ((amount / totalSpent) * 100).toFixed(1);
-                    
-                    return (
-                      <div key={category} className="p-6 bg-slate-50 rounded-lg hover:bg-slate-100 transition-all duration-300 hover:shadow-lg group">
-                        <div className="flex items-center gap-4 mb-4">
-                          <div className={`p-3 rounded-lg ${getCategoryColor(category)} group-hover:scale-110 transition-transform`}>
-                            <IconComponent className="h-5 w-5 text-white" />
-                          </div>
-                          <div>
-                            <p className="font-semibold text-slate-800">{category}</p>
-                            <p className="text-sm text-slate-500">{percentage}%</p>
-                          </div>
-                        </div>
-                        
-                        {/* Circular Progress */}
-                        <div className="relative w-24 h-24 mx-auto mb-4">
-                          <svg className="w-24 h-24 transform -rotate-90" viewBox="0 0 100 100">
-                            <circle
-                              cx="50"
-                              cy="50"
-                              r="40"
-                              stroke="currentColor"
-                              strokeWidth="8"
-                              fill="transparent"
-                              className="text-slate-200"
-                            />
-                            <circle
-                              cx="50"
-                              cy="50"
-                              r="40"
-                              stroke="currentColor"
-                              strokeWidth="8"
-                              fill="transparent"
-                              strokeDasharray={`${2 * Math.PI * 40}`}
-                              strokeDashoffset={`${2 * Math.PI * 40 * (1 - parseFloat(percentage) / 100)}`}
-                              className={`${getCategoryColor(category).replace('bg-', 'text-')} transition-all duration-1000 ease-out`}
-                            />
-                          </svg>
-                          <div className="absolute inset-0 flex items-center justify-center">
-                            <span className="text-lg font-bold text-slate-800">{percentage}%</span>
-                          </div>
-                        </div>
-                        
-                        <div className="text-center">
-                          <p className="text-2xl font-bold text-slate-800">${amount.toFixed(2)}</p>
-                          <div className="w-full bg-slate-200 rounded-full h-2 mt-2">
-                            <div 
-                              className={`h-2 rounded-full ${getCategoryColor(category).replace('bg-', 'bg-')} transition-all duration-500`}
-                              style={{ width: `${percentage}%` }}
-                            ></div>
-                          </div>
-                        </div>
+                  {ledgerData.map((entry, index) => (
+                    <div key={index} className="flex items-center gap-4 p-4 bg-slate-50 rounded-lg">
+                      <div className={`p-3 rounded-full ${getCategoryColor(entry.category)}`}>
+                        {React.createElement(getCategoryIcon(entry.category), { className: 'h-5 w-5 text-white' })}
                       </div>
-                    );
-                  })}
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="trends" className="space-y-6">
-            <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-lg">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Activity className="h-5 w-5 text-indigo-500" />
-                  Monthly Spending Trend
-                </CardTitle>
-                <CardDescription>Your spending pattern over time with interactive charts</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-6">
-                  {Object.entries(monthlyTrend).map(([month, amount], index) => {
-                    const maxAmount = Math.max(...Object.values(monthlyTrend));
-                    const percentage = (amount / maxAmount) * 100;
-                    const isHighest = amount === maxAmount;
-                    
-                    return (
-                      <div key={month} className="flex items-center justify-between p-4 bg-slate-50 rounded-lg hover:bg-slate-100 transition-all duration-200 group">
-                        <div className="flex items-center gap-4">
-                          <div className={`p-3 rounded-lg ${isHighest ? 'bg-indigo-500' : 'bg-slate-300'} group-hover:scale-110 transition-transform`}>
-                            <Calendar className={`h-5 w-5 ${isHighest ? 'text-white' : 'text-slate-600'}`} />
-                          </div>
-                          <div>
-                            <span className="font-semibold text-slate-800">{month}</span>
-                            {isHighest && (
-                              <Badge className="ml-2 bg-indigo-500 text-white text-xs">
-                                <Star className="h-3 w-3 mr-1" />
-                                Highest
-                              </Badge>
-                            )}
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <p className="text-xl font-bold text-slate-800">${amount.toFixed(2)}</p>
-                          <div className="flex items-center gap-2 mt-1">
-                            <div className="w-32 bg-slate-200 rounded-full h-3">
-                              <div 
-                                className={`h-3 rounded-full transition-all duration-1000 ease-out ${isHighest ? 'bg-indigo-500' : 'bg-slate-400'}`}
-                                style={{ width: `${percentage}%` }}
-                              ></div>
-                            </div>
-                            <span className="text-xs text-slate-500">{percentage.toFixed(0)}%</span>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                  
-                  {/* Spending Trend Summary */}
-                  <div className="mt-8 p-6 bg-gradient-to-r from-indigo-50 to-purple-50 rounded-lg border border-indigo-200">
-                    <h3 className="text-lg font-semibold text-slate-800 mb-3">Spending Insights</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                      <div className="text-center">
-                        <p className="text-2xl font-bold text-indigo-600">
-                          ${Math.max(...Object.values(monthlyTrend)).toFixed(2)}
+                      <div className="flex-1">
+                        <h4 className="font-medium text-slate-800">{entry.vendor}</h4>
+                        <p className="text-sm text-slate-600">{entry.description}</p>
+                        <p className="text-xs text-slate-500">
+                          {new Date(entry.transactionDate).toLocaleDateString('en-US', {
+                            weekday: 'long',
+                            year: 'numeric',
+                            month: 'long',
+                            day: 'numeric'
+                          })}
                         </p>
-                        <p className="text-sm text-slate-600">Highest Month</p>
                       </div>
-                      <div className="text-center">
-                        <p className="text-2xl font-bold text-purple-600">
-                          ${(Object.values(monthlyTrend).reduce((a, b) => a + b, 0) / Object.values(monthlyTrend).length).toFixed(2)}
-                        </p>
-                        <p className="text-sm text-slate-600">Average Monthly</p>
-                      </div>
-                      <div className="text-center">
-                        <p className="text-2xl font-bold text-green-600">
-                          {Object.keys(monthlyTrend).length}
-                        </p>
-                        <p className="text-sm text-slate-600">Months Tracked</p>
+                      <div className="text-right">
+                        <p className="text-lg font-bold text-slate-800">${entry.amount.toFixed(2)}</p>
+                        <Badge variant="secondary" className="text-xs">
+                          {entry.category}
+                        </Badge>
                       </div>
                     </div>
-                  </div>
+                  ))}
                 </div>
               </CardContent>
             </Card>
