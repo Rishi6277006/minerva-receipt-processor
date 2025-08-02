@@ -144,20 +144,21 @@ export const appRouter = t.router({
           const descriptionIndex = headers.findIndex(h => 
             h.includes('description') || h.includes('desc') || h.includes('memo') || h.includes('note') || h.includes('details')
           );
-          const depositsIndex = headers.findIndex(h => 
-            h.includes('deposits') || h.includes('deposit') || h.includes('credit')
-          );
-          const withdrawalsIndex = headers.findIndex(h => 
-            h.includes('withdrawls') || h.includes('withdrawals') || h.includes('withdrawal') || h.includes('debit')
-          );
           const amountIndex = headers.findIndex(h => 
             h.includes('amount') || h.includes('amt') || h.includes('sum') || h.includes('total')
           );
           const typeIndex = headers.findIndex(h => 
             h.includes('type') || h.includes('transaction_type') || h.includes('category')
           );
+          const depositsIndex = headers.findIndex(h => 
+            h.includes('deposits') || h.includes('deposit') || h.includes('credit')
+          );
+          const withdrawalsIndex = headers.findIndex(h => 
+            h.includes('withdrawls') || h.includes('withdrawals') || h.includes('withdrawal') || h.includes('debit')
+          );
 
           console.log('Column indices:', { dateIndex, descriptionIndex, depositsIndex, withdrawalsIndex, amountIndex, typeIndex });
+          console.log('Processing CSV with format: Amount + Type (preferred)');
 
           if (dateIndex === -1) {
             throw new Error('CSV must contain a Date column (found headers: ' + headers.join(', ') + ')');
@@ -165,7 +166,7 @@ export const appRouter = t.router({
           if (descriptionIndex === -1) {
             throw new Error('CSV must contain a Description column (found headers: ' + headers.join(', ') + ')');
           }
-          if (depositsIndex === -1 && withdrawalsIndex === -1 && amountIndex === -1) {
+          if (amountIndex === -1 && depositsIndex === -1 && withdrawalsIndex === -1) {
             throw new Error('CSV must contain an Amount, Deposits, or Withdrawals column (found headers: ' + headers.join(', ') + ')');
           }
 
@@ -194,6 +195,8 @@ export const appRouter = t.router({
               console.log('Skipping invalid row:', { date, description });
               continue;
             }
+
+            console.log('Processing row:', { date, description, amount, type });
 
             // Parse date - handle different formats
             let transactionDate: Date;
@@ -264,18 +267,28 @@ export const appRouter = t.router({
               }
             }
 
-            // Process single amount if no deposits/withdrawals
-            if (amount && depositsIndex === -1 && withdrawalsIndex === -1) {
+            // Process single amount with type (preferred format)
+            if (amount && amountIndex !== -1) {
               try {
                 const cleanAmount = amount.replace(/[$,€£¥]/g, '');
                 const transactionAmount = parseFloat(cleanAmount);
                 if (!isNaN(transactionAmount)) {
+                  // Use type from CSV if available, otherwise infer from amount
+                  let transactionType = type || (transactionAmount < 0 ? 'DEBIT' : 'CREDIT');
+                  
+                  // Normalize type values
+                  if (transactionType.toUpperCase().includes('DEBIT') || transactionType.toUpperCase().includes('WITHDRAWAL')) {
+                    transactionType = 'DEBIT';
+                  } else if (transactionType.toUpperCase().includes('CREDIT') || transactionType.toUpperCase().includes('DEPOSIT')) {
+                    transactionType = 'CREDIT';
+                  }
+                  
                   const transaction = await ctx.prisma.bankTransaction.create({
-            data: {
+                    data: {
                       description,
                       amount: Math.abs(transactionAmount),
                       transactionDate,
-                      type: transactionAmount < 0 ? 'DEBIT' : 'CREDIT',
+                      type: transactionType,
                       sourceFile: 'uploaded-csv'
                     }
                   });
