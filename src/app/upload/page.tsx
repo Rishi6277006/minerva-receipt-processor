@@ -112,8 +112,8 @@ export default function UploadPage() {
         console.log('Frontend CSV content:', csvContent);
         console.log('CSV content length:', csvContent.length);
         
-        // Call our test API route for CSV processing
-        const response = await fetch('/api/test-upload', {
+        // Call our actual CSV processing API route
+        const response = await fetch('/api/upload-csv', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -136,7 +136,7 @@ export default function UploadPage() {
         }
 
         // Use the actual processed data from backend
-        const processedTransactions = result.result?.data || result.data || [];
+        const processedTransactions = result.result?.data?.transactions || result.data?.transactions || result.transactions || [];
         
         if (processedTransactions.length > 0) {
           setUploadedTransactions(prev => [...prev, ...processedTransactions.map((tx: any) => ({
