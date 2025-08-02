@@ -49,8 +49,11 @@ export class EmailService {
   }
 
   async checkForReceiptEmails(): Promise<void> {
-    // Check if email credentials are configured
-    if (!this.config.user || !this.config.password) {
+    // Check if email credentials are configured at runtime
+    const hasCredentials = !!(process.env.EMAIL_USER && process.env.EMAIL_PASSWORD);
+    console.log('Email credentials check:', { hasCredentials, user: process.env.EMAIL_USER ? 'configured' : 'not configured' });
+    
+    if (!hasCredentials) {
       console.log('Email credentials not configured - running in demo mode');
       return this.runDemoMode();
     }
