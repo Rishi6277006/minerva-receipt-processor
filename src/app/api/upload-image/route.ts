@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 
-export const maxDuration = 60; // 60 seconds timeout
+export const maxDuration = 300; // 5 minutes timeout for image processing
 export const dynamic = 'force-dynamic';
 
 export async function POST(request: Request) {

@@ -47,7 +47,10 @@ export default function UploadPage() {
         // Compress and convert image to base64 for API
         const base64 = await compressImage(selectedFile);
         
-        // Call our API route for image processing
+        // Call our API route for image processing with timeout
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 240000); // 4 minute timeout
+        
         const response = await fetch('/api/upload-image', {
           method: 'POST',
           headers: {
@@ -56,8 +59,11 @@ export default function UploadPage() {
           body: JSON.stringify({
             imageData: base64,
             filename: selectedFile.name
-          })
+          }),
+          signal: controller.signal
         });
+        
+        clearTimeout(timeoutId);
 
         console.log('Image upload response status:', response.status);
         console.log('Image upload request body:', JSON.stringify({
@@ -164,7 +170,19 @@ export default function UploadPage() {
       
     } catch (error) {
       console.error('Upload error:', error);
-      setErrorMessage(error instanceof Error ? error.message : 'Upload failed');
+      
+      if (error instanceof Error) {
+        if (error.name === 'AbortError') {
+          setErrorMessage('Upload timed out. Please try again with a smaller image or check your connection.');
+        } else if (error.message.includes('FUNCTION_INVOCATION_TIMEOUT')) {
+          setErrorMessage('Processing timed out. The image may be too large or complex. Please try with a smaller, clearer image.');
+        } else {
+          setErrorMessage(error.message);
+        }
+      } else {
+        setErrorMessage('Upload failed. Please try again.');
+      }
+      
       setUploadStatus('error');
     } finally {
       setIsUploading(false);
@@ -192,8 +210,8 @@ export default function UploadPage() {
       const img = new Image();
       
       img.onload = () => {
-        // Calculate new dimensions (max 800px width/height)
-        const maxSize = 800;
+        // Calculate new dimensions (max 600px width/height for faster processing)
+        const maxSize = 600;
         let { width, height } = img;
         
         if (width > height) {
@@ -211,9 +229,9 @@ export default function UploadPage() {
         canvas.width = width;
         canvas.height = height;
         
-        // Draw and compress
+        // Draw and compress with higher compression for smaller payload
         ctx?.drawImage(img, 0, 0, width, height);
-        const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.7); // 70% quality
+        const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.5); // 50% quality for smaller size
         const base64 = compressedDataUrl.split(',')[1];
         resolve(base64);
       };
