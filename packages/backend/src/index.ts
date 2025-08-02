@@ -279,4 +279,4 @@ app.listen(PORT, async () => {
   } else {
     console.log('Email monitoring disabled - no email credentials provided');
   }
-}); # Force rebuild Sat Aug  2 19:19:43 EDT 2025
+}); // Force rebuild

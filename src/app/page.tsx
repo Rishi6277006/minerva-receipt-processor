@@ -151,24 +151,16 @@ export default function Dashboard() {
         button.innerHTML = '<RefreshCw className="h-4 w-4 mr-2 animate-spin" /> Connecting...';
       }
 
-      // Call the REAL OAuth endpoint
-      const response = await fetch('/api/test-backend', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          action: 'generateAuthUrl',
-          userId: 'demo-user'
-        })
-      });
-      
+      // Call the direct OAuth endpoint
+      const response = await fetch('/api/oauth/gmail');
       const result = await response.json();
       
-      if (result.result?.data?.authUrl) {
+      if (result.authUrl) {
         // Redirect to REAL Google OAuth
-        window.location.href = result.result.data.authUrl;
+        window.location.href = result.authUrl;
       } else if (result.error) {
         // Show error message
-        alert(`❌ OAuth Error: ${result.error.message || 'Failed to generate OAuth URL'}`);
+        alert(`❌ OAuth Error: ${result.error}`);
       } else {
         alert('❌ Failed to connect Gmail. Please try again.');
       }
