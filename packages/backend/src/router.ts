@@ -1,7 +1,7 @@
 import { initTRPC } from '@trpc/server';
 import { z } from 'zod';
 import { Context } from './context';
-import { parseReceiptWithOpenAI } from './services/openaiService';
+import { parseReceiptWithOpenAI, parseCSVWithOpenAI } from './services/openaiService';
 import { ImageService } from './services/imageService';
 import multer from 'multer';
 import { createWriteStream } from 'fs';
@@ -120,209 +120,58 @@ export const appRouter = t.router({
       }
     }),
 
-    uploadStatement: t.procedure
-      .input(z.object({ // Changed input to accept csvData string
+        uploadStatement: t.procedure
+      .input(z.object({
         csvData: z.string()
       }))
       .mutation(async ({ ctx, input }) => {
         try {
           console.log('Backend received CSV data length:', input.csvData.length);
           console.log('Backend received CSV data preview:', input.csvData.substring(0, 200));
-          console.log('Full CSV data:', input.csvData);
           
-          const lines = input.csvData.split('\n').filter(line => line.trim() !== '');
-          console.log('CSV lines after filtering:', lines);
-          console.log('Number of lines:', lines.length);
+          // Use AI to parse the CSV data
+          const parsedTransactions = await parseCSVWithOpenAI(input.csvData);
           
-          if (lines.length < 2) {
-            throw new Error('CSV file must have at least a header row and one data row');
+          if (!Array.isArray(parsedTransactions)) {
+            throw new Error('AI parsing failed - expected array of transactions');
           }
           
-          const headers = lines[0].split(',').map(h => h.trim().toLowerCase());
-          console.log('Found headers:', headers);
-          console.log('Raw header line:', lines[0]);
+          console.log(`AI parsed ${parsedTransactions.length} transactions`);
           
-          // More flexible column detection
-          const dateIndex = headers.findIndex(h => 
-            h.includes('date') || h.includes('transaction_date') || h.includes('trans_date')
-          );
-          const descriptionIndex = headers.findIndex(h => 
-            h.includes('description') || h.includes('desc') || h.includes('memo') || h.includes('note') || h.includes('details')
-          );
-          const amountIndex = headers.findIndex(h => 
-            h.includes('amount') || h.includes('amt') || h.includes('sum') || h.includes('total')
-          );
-          const typeIndex = headers.findIndex(h => 
-            h.includes('type') || h.includes('transaction_type') || h.includes('category')
-          );
-          const depositsIndex = headers.findIndex(h => 
-            h.includes('deposits') || h.includes('deposit') || h.includes('credit')
-          );
-          const withdrawalsIndex = headers.findIndex(h => 
-            h.includes('withdrawls') || h.includes('withdrawals') || h.includes('withdrawal') || h.includes('debit')
-          );
-
-          console.log('Column indices:', { dateIndex, descriptionIndex, depositsIndex, withdrawalsIndex, amountIndex, typeIndex });
-          console.log('Processing CSV with format: Amount + Type (preferred)');
-
-          if (dateIndex === -1) {
-            throw new Error('CSV must contain a Date column (found headers: ' + headers.join(', ') + ')');
-          }
-          if (descriptionIndex === -1) {
-            throw new Error('CSV must contain a Description column (found headers: ' + headers.join(', ') + ')');
-          }
-          if (amountIndex === -1 && depositsIndex === -1 && withdrawalsIndex === -1) {
-            throw new Error('CSV must contain an Amount, Deposits, or Withdrawals column (found headers: ' + headers.join(', ') + ')');
-          }
-
           const transactions: any[] = [];
-                 
-          for (let i = 1; i < lines.length; i++) {
-            const line = lines[i].trim();
-            if (!line) continue;
-            
-            // Handle quoted CSV values
-            const values = line.split(',').map(v => {
-              const trimmed = v.trim();
-              // Remove quotes if present
-              return trimmed.replace(/^["']|["']$/g, '');
-            });
-            
-            const date = values[dateIndex];
-            const description = values[descriptionIndex];
-            const deposits = depositsIndex !== -1 ? values[depositsIndex] : '0';
-            const withdrawals = withdrawalsIndex !== -1 ? values[withdrawalsIndex] : '0';
-            const amount = amountIndex !== -1 ? values[amountIndex] : null;
-            const type = typeIndex !== -1 ? values[typeIndex] : null;
-
-            // Validate required fields
-            if (!date || !description) {
-              console.log('Skipping invalid row:', { date, description });
-              continue;
-            }
-
-            console.log('Processing row:', { date, description, amount, type });
-
-            // Parse date - handle different formats
-            let transactionDate: Date;
+          
+          // Store each transaction in the database
+          for (const parsedTx of parsedTransactions) {
             try {
-              // Try different date formats
-              if (date.includes('-')) {
-                transactionDate = new Date(date);
-              } else if (date.includes('/')) {
-                // Handle MM/DD/YYYY format
-                const parts = date.split('/');
-                if (parts.length === 3) {
-                  transactionDate = new Date(parseInt(parts[2]), parseInt(parts[0]) - 1, parseInt(parts[1]));
-                } else {
-                  transactionDate = new Date(date);
+              const transaction = await ctx.prisma.bankTransaction.create({
+                data: {
+                  description: parsedTx.description,
+                  amount: parsedTx.amount,
+                  transactionDate: new Date(parsedTx.date),
+                  type: parsedTx.type,
+                  sourceFile: 'ai-parsed-csv'
                 }
-              } else {
-                transactionDate = new Date(date);
-              }
-              
-              if (isNaN(transactionDate.getTime())) {
-                console.log('Invalid date:', date);
-                continue;
-              }
+              });
+              transactions.push(transaction);
             } catch (error) {
-              console.log('Error parsing date:', date);
-              continue;
-            }
-
-            // Process deposits
-            if (deposits && deposits !== '0') {
-              try {
-                const depositAmount = parseFloat(deposits.replace(/[$,€£¥]/g, ''));
-                if (!isNaN(depositAmount) && depositAmount > 0) {
-                  const transaction = await ctx.prisma.bankTransaction.create({
-                    data: {
-                      description: `${description} (Deposit)`,
-                      amount: depositAmount,
-                      transactionDate,
-                      type: 'CREDIT',
-                      sourceFile: 'uploaded-csv'
-                    }
-                  });
-                  transactions.push(transaction);
-                }
-              } catch (error) {
-                console.log('Error parsing deposit amount:', deposits);
-              }
-            }
-
-            // Process withdrawals
-            if (withdrawals && withdrawals !== '0') {
-              try {
-                const withdrawalAmount = parseFloat(withdrawals.replace(/[$,€£¥]/g, ''));
-                if (!isNaN(withdrawalAmount) && withdrawalAmount > 0) {
-                  const transaction = await ctx.prisma.bankTransaction.create({
-                    data: {
-                      description: `${description} (Withdrawal)`,
-                      amount: withdrawalAmount,
-                      transactionDate,
-                      type: 'DEBIT',
-                      sourceFile: 'uploaded-csv'
-                    }
-                  });
-                  transactions.push(transaction);
-                }
-              } catch (error) {
-                console.log('Error parsing withdrawal amount:', withdrawals);
-              }
-            }
-
-            // Process single amount with type (preferred format)
-            if (amount && amountIndex !== -1) {
-              try {
-                const cleanAmount = amount.replace(/[$,€£¥]/g, '');
-                const transactionAmount = parseFloat(cleanAmount);
-                if (!isNaN(transactionAmount)) {
-                  // Use type from CSV if available, otherwise infer from amount
-                  let transactionType = type || (transactionAmount < 0 ? 'DEBIT' : 'CREDIT');
-                  
-                  // Normalize type values - handle case sensitivity
-                  const typeUpper = transactionType.toUpperCase();
-                  if (typeUpper.includes('DEBIT') || typeUpper.includes('WITHDRAWAL') || typeUpper === 'DEBIT') {
-                    transactionType = 'DEBIT';
-                  } else if (typeUpper.includes('CREDIT') || typeUpper.includes('DEPOSIT') || typeUpper === 'CREDIT') {
-                    transactionType = 'CREDIT';
-                  } else {
-                    // Default to DEBIT for unknown types
-                    transactionType = 'DEBIT';
-                  }
-                  
-                  const transaction = await ctx.prisma.bankTransaction.create({
-                    data: {
-                      description,
-                      amount: Math.abs(transactionAmount),
-                      transactionDate,
-                      type: transactionType,
-                      sourceFile: 'uploaded-csv'
-                    }
-                  });
-                  transactions.push(transaction);
-                }
-              } catch (error) {
-                console.log('Error parsing amount:', amount);
-              }
+              console.log('Error storing transaction:', parsedTx, error);
             }
           }
           
-          console.log(`Successfully processed ${transactions.length} transactions`);
+          console.log(`Successfully stored ${transactions.length} transactions`);
           
           if (transactions.length === 0) {
-            throw new Error('No transactions found in CSV - check column mapping and data format');
+            throw new Error('No transactions found in CSV - AI parsing may have failed');
           }
           
           return { 
-            message: 'Bank statement uploaded successfully',
+            message: 'Bank statement uploaded successfully using AI',
             transactionsCount: transactions.length,
             transactions
           };
         } catch (error) {
-          console.error('CSV processing error:', error);
-          throw new Error(`Failed to process CSV: ${error}`);
+          console.error('AI CSV processing error:', error);
+          throw new Error(`Failed to process CSV with AI: ${error}`);
         }
       }),
 

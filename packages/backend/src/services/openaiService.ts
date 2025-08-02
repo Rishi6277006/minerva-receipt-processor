@@ -56,6 +56,63 @@ Return only valid JSON with these exact field names.`;
   }
 }
 
+export async function parseCSVWithOpenAI(csvData: string) {
+  console.log('Parsing CSV data:', csvData.substring(0, 200) + '...');
+  
+  // If OpenAI is not available, use basic parsing
+  if (!openai) {
+    console.log('OpenAI not configured, using basic CSV parsing');
+    return parseCSVBasic(csvData);
+  }
+
+  const prompt = `You are an expert bank statement parser. Parse this CSV data and extract all financial transactions in JSON format.
+
+CSV Data:
+${csvData}
+
+Instructions:
+1. Parse each row as a separate transaction
+2. Extract: date, description, amount, type (DEBIT/CREDIT)
+3. Handle different CSV formats automatically
+4. Clean and normalize the data
+5. Return an array of transaction objects
+
+Rules:
+- For amount: Remove currency symbols and convert to number
+- For date: Convert to YYYY-MM-DD format
+- For type: Determine if DEBIT (money spent) or CREDIT (money received)
+- For description: Clean up the text, remove extra spaces
+- Skip header rows and empty rows
+
+Return a JSON array with this structure:
+[
+  {
+    "date": "2024-01-15",
+    "description": "Grocery Store",
+    "amount": 45.67,
+    "type": "DEBIT"
+  }
+]
+
+Return only valid JSON array.`;
+
+  const chatCompletion = await openai.chat.completions.create({
+    messages: [{ role: 'user', content: prompt }],
+    model: 'gpt-4o',
+    response_format: { type: "json_object" },
+  });
+
+  const content = chatCompletion.choices[0].message.content;
+  if (content) {
+    console.log('OpenAI CSV response:', content);
+    const parsed = JSON.parse(content);
+    console.log('Parsed CSV result:', parsed);
+    return parsed;
+  } else {
+    throw new Error("Failed to parse CSV with OpenAI");
+  }
+}
+
 // Basic parser for when OpenAI is not available
 function parseReceiptBasic(receiptText: string) {
   const lines = receiptText.split('\n').map(line => line.trim()).filter(line => line.length > 0);
@@ -155,4 +212,38 @@ function parseReceiptBasic(receiptText: string) {
     category,
     description: description || 'Receipt items'
   };
+}
+
+// Basic CSV parser for when OpenAI is not available
+function parseCSVBasic(csvData: string) {
+  const lines = csvData.split('\n').filter(line => line.trim() !== '');
+  const transactions = [];
+  
+  if (lines.length < 2) {
+    return [];
+  }
+  
+  const headers = lines[0].split(',').map(h => h.trim().toLowerCase());
+  
+  for (let i = 1; i < lines.length; i++) {
+    const values = lines[i].split(',').map(v => v.trim().replace(/^["']|["']$/g, ''));
+    
+    if (values.length < 3) continue;
+    
+    const date = values[0];
+    const description = values[1];
+    const amount = parseFloat(values[2].replace(/[$,]/g, ''));
+    const type = values[3] || 'DEBIT';
+    
+    if (!isNaN(amount) && date && description) {
+      transactions.push({
+        date: new Date(date).toISOString().split('T')[0],
+        description,
+        amount,
+        type: type.toUpperCase()
+      });
+    }
+  }
+  
+  return transactions;
 } 
