@@ -128,14 +128,19 @@ export const appRouter = t.router({
         try {
           console.log('Backend received CSV data length:', input.csvData.length);
           console.log('Backend received CSV data preview:', input.csvData.substring(0, 200));
+          console.log('Full CSV data:', input.csvData);
           
           const lines = input.csvData.split('\n').filter(line => line.trim() !== '');
+          console.log('CSV lines after filtering:', lines);
+          console.log('Number of lines:', lines.length);
+          
           if (lines.length < 2) {
             throw new Error('CSV file must have at least a header row and one data row');
           }
           
           const headers = lines[0].split(',').map(h => h.trim().toLowerCase());
           console.log('Found headers:', headers);
+          console.log('Raw header line:', lines[0]);
           
           // More flexible column detection
           const dateIndex = headers.findIndex(h => 
@@ -301,6 +306,11 @@ export const appRouter = t.router({
           }
           
           console.log(`Successfully processed ${transactions.length} transactions`);
+          
+          if (transactions.length === 0) {
+            throw new Error('No transactions found in CSV - check column mapping and data format');
+          }
+          
           return { 
             message: 'Bank statement uploaded successfully',
             transactionsCount: transactions.length,
