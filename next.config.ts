@@ -9,6 +9,10 @@ const nextConfig: NextConfig = {
   eslint: {
     ignoreDuringBuilds: true,
   },
+  // Increase API route body size limit
+  experimental: {
+    serverComponentsExternalPackages: ['@prisma/client'],
+  },
 };
 
 export default nextConfig;

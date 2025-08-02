@@ -44,8 +44,8 @@ export default function UploadPage() {
       const isCSV = selectedFile.type === 'text/csv' || selectedFile.name.endsWith('.csv');
       
       if (isImage) {
-        // Convert image to base64 for API
-        const base64 = await fileToBase64(selectedFile);
+        // Compress and convert image to base64 for API
+        const base64 = await compressImage(selectedFile);
         
         // Call our API route for image processing
         const response = await fetch('/api/upload-image', {
@@ -179,6 +179,44 @@ export default function UploadPage() {
         resolve(base64);
       };
       reader.onerror = error => reject(error);
+    });
+  };
+
+  const compressImage = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      const img = new Image();
+      
+      img.onload = () => {
+        // Calculate new dimensions (max 800px width/height)
+        const maxSize = 800;
+        let { width, height } = img;
+        
+        if (width > height) {
+          if (width > maxSize) {
+            height = (height * maxSize) / width;
+            width = maxSize;
+          }
+        } else {
+          if (height > maxSize) {
+            width = (width * maxSize) / height;
+            height = maxSize;
+          }
+        }
+        
+        canvas.width = width;
+        canvas.height = height;
+        
+        // Draw and compress
+        ctx?.drawImage(img, 0, 0, width, height);
+        const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.7); // 70% quality
+        const base64 = compressedDataUrl.split(',')[1];
+        resolve(base64);
+      };
+      
+      img.onerror = reject;
+      img.src = URL.createObjectURL(file);
     });
   };
 

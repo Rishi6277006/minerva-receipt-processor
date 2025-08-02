@@ -1,5 +1,8 @@
 import { NextResponse } from 'next/server';
 
+export const maxDuration = 60; // 60 seconds timeout
+export const dynamic = 'force-dynamic';
+
 export async function POST(request: Request) {
   try {
     const { imageData, filename } = await request.json();
