@@ -16,6 +16,7 @@ import {
   FileText,
   CreditCard
 } from 'lucide-react';
+import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LineChart, Line } from 'recharts';
 
 interface LedgerEntry {
   id: string;
@@ -111,6 +112,36 @@ export default function ComparePage() {
   const totalLedgerAmount = comparisonData.ledgerOnly.reduce((sum, item) => sum + item.amount, 0);
   const totalBankAmount = comparisonData.bankOnly.reduce((sum, item) => sum + item.amount, 0);
 
+  // Chart data preparation
+  const pieChartData = [
+    { name: 'Matched', value: totalMatched, color: '#10b981', amount: totalMatchedAmount },
+    { name: 'Receipts Only', value: totalLedgerOnly, color: '#f59e0b', amount: totalLedgerAmount },
+    { name: 'Bank Only', value: totalBankOnly, color: '#3b82f6', amount: totalBankAmount }
+  ];
+
+  const categoryData = comparisonData.ledgerOnly.reduce((acc, item) => {
+    acc[item.category] = (acc[item.category] || 0) + 1;
+    return acc;
+  }, {} as Record<string, number>);
+
+  const categoryChartData = Object.entries(categoryData).map(([category, count]) => ({
+    category,
+    count,
+    amount: comparisonData.ledgerOnly
+      .filter(item => item.category === category)
+      .reduce((sum, item) => sum + item.amount, 0)
+  }));
+
+  const monthlyData = comparisonData.matched.reduce((acc, item) => {
+    const month = new Date(item.ledger.transactionDate).toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+    acc[month] = (acc[month] || 0) + 1;
+    return acc;
+  }, {} as Record<string, number>);
+
+  const monthlyChartData = Object.entries(monthlyData)
+    .sort((a, b) => new Date(a[0]).getTime() - new Date(b[0]).getTime())
+    .map(([month, count]) => ({ month, count }));
+
   return (
     <div className="container mx-auto p-6 space-y-6">
       {/* Header */}
@@ -173,6 +204,94 @@ export default function ComparePage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Charts Section */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Transaction Distribution Pie Chart */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <PieChart className="h-5 w-5" />
+              Transaction Distribution
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={300}>
+              <PieChart>
+                <Pie
+                  data={pieChartData}
+                  cx="50%"
+                  cy="50%"
+                  labelLine={false}
+                  label={({ name, percent }) => `${name} ${((percent || 0) * 100).toFixed(0)}%`}
+                  outerRadius={80}
+                  fill="#8884d8"
+                  dataKey="value"
+                >
+                  {pieChartData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={entry.color} />
+                  ))}
+                </Pie>
+                <Tooltip 
+                  formatter={(value, name) => [
+                    `${name}: ${value} transactions ($${pieChartData.find(d => d.name === name)?.amount?.toFixed(2) || '0.00'})`,
+                    name
+                  ]}
+                />
+              </PieChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+
+        {/* Category Distribution Bar Chart */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <BarChart className="h-5 w-5" />
+              Receipt Categories (Unmatched)
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart data={categoryChartData}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="category" />
+                <YAxis />
+                <Tooltip 
+                  formatter={(value, name) => [
+                    name === 'count' ? `${value} receipts` : `$${typeof value === 'number' ? value.toFixed(2) : '0.00'}`,
+                    name === 'count' ? 'Count' : 'Amount'
+                  ]}
+                />
+                <Bar dataKey="count" fill="#f59e0b" name="Count" />
+              </BarChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Monthly Trends */}
+      {monthlyChartData.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <TrendingUp className="h-5 w-5" />
+              Monthly Matched Transactions
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={300}>
+              <LineChart data={monthlyChartData}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="month" />
+                <YAxis />
+                <Tooltip formatter={(value) => [`${value} matches`, 'Matched Transactions']} />
+                <Line type="monotone" dataKey="count" stroke="#10b981" strokeWidth={3} dot={{ fill: '#10b981', strokeWidth: 2, r: 4 }} />
+              </LineChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Main Comparison Tabs */}
       <Tabs defaultValue="matched" className="space-y-4">
