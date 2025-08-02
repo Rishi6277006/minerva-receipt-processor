@@ -188,6 +188,7 @@ export const appRouter = t.router({
         const isConfigured = !!(process.env.EMAIL_USER && process.env.EMAIL_PASSWORD);
         
         if (!isConfigured) {
+          console.log('Email not configured - running demo mode');
           await emailService.checkForReceiptEmails();
           return { 
             message: 'Demo mode: Added sample receipts to demonstrate email processing feature',
@@ -195,13 +196,16 @@ export const appRouter = t.router({
             receiptsAdded: 3
           };
         } else {
+          console.log('Email configured - running real email check');
           await emailService.checkForReceiptEmails();
           return { 
             message: 'Email check completed successfully',
-            demoMode: false
+            demoMode: false,
+            receiptsAdded: 0
           };
         }
       } catch (error) {
+        console.error('Email check error:', error);
         throw new Error(`Failed to check emails: ${error}`);
       }
     }),

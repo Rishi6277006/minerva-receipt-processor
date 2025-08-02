@@ -147,6 +147,7 @@ export class EmailService {
       }
     ];
 
+    let addedCount = 0;
     // Add to database
     for (const receipt of sampleReceipts) {
       try {
@@ -162,12 +163,13 @@ export class EmailService {
           }
         });
         console.log(`Added demo receipt: ${receipt.vendor} - $${receipt.amount}`);
+        addedCount++;
       } catch (error) {
         console.error('Error adding demo receipt:', error);
       }
     }
 
-    console.log('Demo mode completed - added sample receipts');
+    console.log(`Demo mode completed - added ${addedCount} sample receipts`);
   }
 
   private async processEmail(email: any, attachment: any): Promise<void> {
