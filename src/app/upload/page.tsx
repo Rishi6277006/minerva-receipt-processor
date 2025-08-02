@@ -47,9 +47,8 @@ export default function UploadPage() {
         // Convert image to base64 for API
         const base64 = await fileToBase64(selectedFile);
         
-        // Call backend API for image processing using tRPC format
-        const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:3001';
-        const response = await fetch(`${backendUrl}/trpc/receipt.uploadImage`, {
+        // Call our API route for image processing
+        const response = await fetch('/api/upload-image', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -111,9 +110,8 @@ export default function UploadPage() {
         // Read CSV file content
         const csvContent = await fileToText(selectedFile);
         
-        // Call backend API for CSV processing using tRPC format
-        const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:3001';
-        const response = await fetch(`${backendUrl}/trpc/bank.uploadStatement`, {
+        // Call our API route for CSV processing
+        const response = await fetch('/api/upload-csv', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
