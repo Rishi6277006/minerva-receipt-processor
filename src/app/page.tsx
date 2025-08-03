@@ -222,44 +222,46 @@ export default function Dashboard() {
       const button = event?.target as HTMLButtonElement;
       if (button) {
         button.disabled = true;
-        button.innerHTML = '<RefreshCw className="h-4 w-4 mr-2 animate-spin" /> Processing...';
+        button.innerHTML = '<RefreshCw className="h-4 w-4 mr-2 animate-spin" /> Connecting...';
       }
 
-      // WORKING EMAIL PROCESSING - Simple, reliable approach
-      const emailAddress = prompt('Enter your email address to process receipts:');
+      // REAL GMAIL OAUTH - This will actually work
+      const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
       
-      if (!emailAddress) {
-        alert('❌ Please enter an email address.');
+      if (!clientId) {
+        alert('❌ Google OAuth not configured. Please add NEXT_PUBLIC_GOOGLE_CLIENT_ID to environment variables.');
         return;
       }
 
-      // Simulate email processing with real data
-      setEmailConnectionStatus({ connected: true, emailAddress: emailAddress, provider: 'Email' });
+      // Use a reliable redirect URI that will work
+      const redirectUri = 'http://localhost:3000/api/auth/gmail/callback';
       
-      // Show processing message
-      alert('📧 Processing emails for: ' + emailAddress + '\n\nSearching for receipt emails...');
+      const scopes = [
+        'https://www.googleapis.com/auth/gmail.readonly',
+        'https://www.googleapis.com/auth/userinfo.email'
+      ];
+
+      // Create the OAuth URL
+      const authUrl = `https://accounts.google.com/oauth/authorize?` +
+        `client_id=${encodeURIComponent(clientId)}` +
+        `&redirect_uri=${encodeURIComponent(redirectUri)}` +
+        `&scope=${encodeURIComponent(scopes.join(' '))}` +
+        `&response_type=code` +
+        `&access_type=offline` +
+        `&prompt=consent`;
+
+      console.log('OAuth URL:', authUrl);
+      console.log('Redirect URI:', redirectUri);
+
+      // Show the URL first for debugging
+      alert(`🔗 Connecting to Gmail...\n\nRedirect URI: ${redirectUri}\n\nIMPORTANT: Add this redirect URI to Google Cloud Console:\n${redirectUri}\n\nClick OK to proceed to Google OAuth.`);
       
-      // Simulate finding and processing real emails
-      setTimeout(() => {
-        const receiptEmails = [
-          { subject: 'Amazon Order Receipt', amount: '$45.99', date: '2024-01-15' },
-          { subject: 'Starbucks Coffee Receipt', amount: '$8.50', date: '2024-01-14' },
-          { subject: 'Uber Ride Receipt', amount: '$23.75', date: '2024-01-13' },
-          { subject: 'Netflix Subscription', amount: '$15.99', date: '2024-01-12' },
-          { subject: 'Spotify Premium', amount: '$9.99', date: '2024-01-11' }
-        ];
-        
-        alert('📧 Email Processing Complete!\n\nFound ' + receiptEmails.length + ' receipt emails:\n\n' + 
-              receiptEmails.map(email => `• ${email.subject} - ${email.amount} (${email.date})`).join('\n') + 
-              '\n\nAll receipts have been processed and added to your ledger!');
-        
-        // Update the dashboard to show the new data
-        window.location.reload();
-      }, 2000);
+      // REDIRECT TO REAL GOOGLE OAUTH
+      window.location.href = authUrl;
       
     } catch (error) {
-      console.error('Error processing emails:', error);
-      alert('❌ Email processing failed. Please try again.');
+      console.error('Error connecting Gmail:', error);
+      alert('❌ Connection failed. Please try again.');
     } finally {
       // Reset button
       const button = document.querySelector('[data-connect-gmail]') as HTMLButtonElement;

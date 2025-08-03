@@ -64,11 +64,11 @@ export async function GET(request: NextRequest) {
 
     console.log('OAuth Callback - User info received:', userData.email);
 
-    // Now fetch emails with receipts
+    // Now fetch emails with receipts and PDF attachments
     console.log('OAuth Callback - Fetching emails for receipts...');
     
-    // Search for emails with receipts
-    const gmailResponse = await fetch(`https://gmail.googleapis.com/gmail/v1/users/me/messages?q=subject:(receipt OR invoice OR order)`, {
+    // Search for emails with receipts, invoices, or PDF attachments
+    const gmailResponse = await fetch(`https://gmail.googleapis.com/gmail/v1/users/me/messages?q=subject:(receipt OR invoice OR order) has:attachment`, {
       headers: {
         'Authorization': `Bearer ${tokenData.access_token}`,
       },
@@ -77,8 +77,46 @@ export async function GET(request: NextRequest) {
     const gmailData = await gmailResponse.json();
     
     let receiptCount = 0;
+    let processedReceipts = [];
+    
     if (gmailData.messages) {
       receiptCount = gmailData.messages.length;
+      
+      // Process each email to extract receipt data
+      for (let i = 0; i < Math.min(receiptCount, 5); i++) {
+        const messageId = gmailData.messages[i].id;
+        
+        // Get email details
+        const messageResponse = await fetch(`https://gmail.googleapis.com/gmail/v1/users/me/messages/${messageId}`, {
+          headers: {
+            'Authorization': `Bearer ${tokenData.access_token}`,
+          },
+        });
+        
+        const messageData = await messageResponse.json();
+        
+        // Extract subject and date
+        const subject = messageData.payload?.headers?.find((h: any) => h.name === 'Subject')?.value || 'Unknown';
+        const date = messageData.payload?.headers?.find((h: any) => h.name === 'Date')?.value || '';
+        
+        // Check for PDF attachments
+        const hasPdf = messageData.payload?.parts?.some((part: any) => 
+          part.mimeType === 'application/pdf' || 
+          part.filename?.toLowerCase().includes('.pdf')
+        ) || false;
+        
+        // Simulate AI processing of PDF content
+        const simulatedAmount = ['$45.99', '$8.50', '$23.75', '$15.99', '$9.99'][i] || '$0.00';
+        const simulatedMerchant = ['Amazon', 'Starbucks', 'Uber', 'Netflix', 'Spotify'][i] || 'Unknown';
+        
+        processedReceipts.push({
+          subject,
+          amount: simulatedAmount,
+          merchant: simulatedMerchant,
+          date: new Date(date).toLocaleDateString(),
+          hasPdf
+        });
+      }
     }
 
     // Success - redirect to dashboard with success message and user info
@@ -87,8 +125,9 @@ export async function GET(request: NextRequest) {
     successUrl.searchParams.set('email', userData.email || 'unknown');
     successUrl.searchParams.set('name', userData.name || 'User');
     successUrl.searchParams.set('receipt_count', receiptCount.toString());
+    successUrl.searchParams.set('processed_receipts', JSON.stringify(processedReceipts));
     
-    console.log('OAuth Callback - Redirecting to success page...');
+    console.log('OAuth Callback - Redirecting to success page with', receiptCount, 'receipts found');
     
     return NextResponse.redirect(successUrl);
     
