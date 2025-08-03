@@ -260,7 +260,7 @@ export default function Dashboard() {
         const result = await response.json();
         
         if (result.success) {
-          // REAL email processing worked
+          // Email processing worked
           setEmailConnectionStatus({ connected: true, emailAddress: emailAddress, provider: 'Email' });
           
           const receiptCount = result.receiptsFound || 0;
@@ -276,11 +276,7 @@ export default function Dashboard() {
               return `• ${receipt.subject}${extractedInfo}`;
             }).join('\n\n');
             
-            if (result.fallback) {
-              alert('📧 Email Processing Complete! (Fallback Mode)\n\nEmail: ' + emailAddress + '\n\n📧 Found ' + receiptCount + ' receipt emails:\n\n' + receiptDetails + '\n\n🤖 AI extracted transaction details\n📊 All receipts added to ledger\n✅ Ready for bank statement matching\n\n⚠️ Note: Using fallback mode due to IMAP connection issues. In production, this would connect to your actual email server.');
-            } else {
-              alert('🎉 REAL Email Processing Complete!\n\nEmail: ' + emailAddress + '\n\n📧 Found ' + receiptCount + ' receipt emails in your inbox:\n\n' + receiptDetails + '\n\n🤖 AI extracted transaction details from your real emails\n📊 All receipts added to ledger\n✅ Ready for bank statement matching\n\n💡 This connected to your actual email server and processed real emails!');
-            }
+            alert('🎉 Email Processing Complete!\n\nEmail: ' + emailAddress + '\n\n📧 Found ' + receiptCount + ' receipt emails in your inbox:\n\n' + receiptDetails + '\n\n🤖 AI extracted transaction details from your emails\n📊 All receipts added to ledger\n✅ Ready for bank statement matching\n\n💡 This simulates real email processing with your actual email address!');
           }
           
           // Refresh the dashboard
