@@ -389,147 +389,48 @@ export default function Dashboard() {
   const totalSpending = timelineData.reduce((sum, d) => sum + d.amount, 0);
   const averageSpending = totalSpending / timelineData.length;
 
-  const testWebhook = async () => {
+  const testEmailWebhook = async () => {
     try {
-      const emailAddress = prompt('Enter your email to test webhook processing:');
-      
-      if (!emailAddress) {
-        alert('❌ Please enter an email address.');
-        return;
+      const button = event?.target as HTMLButtonElement;
+      if (button) {
+        button.disabled = true;
+        button.innerHTML = '<RefreshCw className="h-4 w-4 mr-2 animate-spin" /> Testing...';
       }
 
-      alert('🧪 Testing REAL email webhook processing...\n\nEmail: ' + emailAddress + '\n\n📧 Processing real receipt emails...\n🔍 Extracting transaction details...\n🤖 Analyzing email content...');
+      alert('🧪 Testing Email Webhook Processing...\n\nThis will simulate receiving real receipt emails via webhook.');
 
+      // Test with Mailgun format
       const response = await fetch('/api/test-webhook', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          email: emailAddress
+          service: 'mailgun',
+          emailType: 'receipt'
         })
       });
 
       const result = await response.json();
-      
+
       if (result.success) {
-        const receiptsFound = result.receiptsFound || 0;
-        const receipts = result.receipts || [];
-        
-        if (receiptsFound > 0) {
-          // Show details of processed receipts
-          const receiptDetails = receipts.map((receipt: any) => {
-            const amount = receipt.amount ? `$${receipt.amount}` : 'N/A';
-            const category = receipt.category || 'Unknown';
-            const merchant = receipt.merchant || 'Unknown';
-            return `• ${receipt.subject}\n   💰 Amount: ${amount} | 🏷️ Category: ${category} | 🏪 Merchant: ${merchant}`;
-          }).join('\n\n');
-          
-          alert('🎉 REAL Webhook Test Successful!\n\nEmail: ' + emailAddress + '\n\n📧 Processed ' + receiptsFound + ' receipt emails:\n\n' + receiptDetails + '\n\n🤖 AI extracted transaction details from real emails\n📊 All receipts processed via webhook\n✅ Ready for bank statement matching\n\n💡 This demonstrates REAL email processing!');
+        const receipt = result.webhookResult?.receipt;
+        if (receipt) {
+          alert('🎉 Email Webhook Test Successful!\n\n📧 Service: ' + result.service + '\n📨 Subject: ' + receipt.subject + '\n💰 Amount: $' + receipt.amount + '\n🏪 Merchant: ' + receipt.merchant + '\n🏷️ Category: ' + receipt.category + '\n\n✅ Real email processing via webhook works!\n\n💡 This simulates receiving actual receipt emails from Mailgun, SendGrid, or Postmark.');
         } else {
-          alert('📧 Webhook Test Complete!\n\nEmail: ' + emailAddress + '\n\n✅ Webhook processed test emails\n📭 No receipt emails found in test data\n\n💡 This shows the webhook is working correctly!');
+          alert('✅ Email Webhook Test Successful!\n\n📧 Service: ' + result.service + '\n\n✅ Webhook processing is working correctly!\n\n💡 This simulates receiving actual receipt emails from email services.');
         }
       } else {
-        alert('❌ Webhook test failed: ' + (result.error || 'Unknown error') + '\n\n🔍 Details: ' + (result.details || 'No details available'));
-      }
-      
-    } catch (error) {
-      console.error('Webhook test error:', error);
-      alert('❌ Webhook test failed. Please try again.');
-    }
-  };
-
-  const testResend = async () => {
-    try {
-      const emailAddress = prompt('Enter your email to test Resend API:');
-      
-      if (!emailAddress) {
-        alert('❌ Please enter an email address.');
-        return;
-      }
-
-      alert('🧪 Testing Resend API with your email...\n\nEmail: ' + emailAddress + '\n\n📧 Sending test email via Resend...\n🔍 Verifying API key...\n✅ Testing real email processing...');
-
-      const response = await fetch('/api/test-resend', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          email: emailAddress
-        })
-      });
-
-      const result = await response.json();
-      
-      if (result.success) {
-        alert('🎉 Resend API Test Successful!\n\nEmail: ' + emailAddress + '\n\n✅ Resend API key is working\n📧 Test email sent successfully\n🔗 Email ID: ' + (result.data?.id || 'N/A') + '\n\n💡 Your email processing system is ready to work with real emails!\n\n📬 Check your inbox for the test email.');
-      } else {
-        alert('❌ Resend API test failed: ' + (result.error || 'Unknown error') + '\n\n🔍 Details: ' + (result.details || 'No details available'));
-      }
-      
-    } catch (error) {
-      console.error('Resend test error:', error);
-      alert('❌ Resend test failed. Please try again.');
-    }
-  };
-
-  const testGmailAPI = async () => {
-    try {
-      const button = event?.target as HTMLButtonElement;
-      if (button) {
-        button.disabled = true;
-        button.innerHTML = '<RefreshCw className="h-4 w-4 mr-2 animate-spin" /> Testing...';
-      }
-
-      alert('🧪 Testing Gmail API connection...\n\nThis will test if the service account can connect to Gmail API.');
-
-      const response = await fetch('/api/test-gmail');
-      const result = await response.json();
-
-      if (result.success) {
-        alert('🎉 Gmail API Test Successful!\n\n✅ Service account connected to Gmail API\n📧 Email: ' + result.profile.emailAddress + '\n📨 Total Messages: ' + result.profile.messagesTotal + '\n🧵 Total Threads: ' + result.profile.threadsTotal + '\n\n💡 Gmail API is working correctly!');
-      } else {
-        alert('❌ Gmail API Test Failed!\n\nError: ' + (result.error || 'Unknown error') + '\n\nDetails: ' + (result.details || 'No details available') + '\n\n💡 Check environment variables and service account setup.');
+        alert('❌ Email Webhook Test Failed!\n\nError: ' + (result.error || 'Unknown error') + '\n\nDetails: ' + (result.details || 'No details available'));
       }
     } catch (error) {
-      console.error('Gmail API test error:', error);
-      alert('❌ Gmail API test failed. Please check the console for details.');
+      console.error('Email webhook test error:', error);
+      alert('❌ Email webhook test failed. Please check the console for details.');
     } finally {
-      const button = document.querySelector('[data-test-gmail]') as HTMLButtonElement;
+      const button = document.querySelector('[data-test-webhook]') as HTMLButtonElement;
       if (button) {
         button.disabled = false;
-        button.innerHTML = '<Mail className="h-4 w-4 mr-2" /> Test Gmail API';
-      }
-    }
-  };
-
-  const testGmailAPISimple = async () => {
-    try {
-      const button = event?.target as HTMLButtonElement;
-      if (button) {
-        button.disabled = true;
-        button.innerHTML = '<RefreshCw className="h-4 w-4 mr-2 animate-spin" /> Testing...';
-      }
-
-      alert('🧪 Testing googleapis package...\n\nThis will test if the googleapis package is working correctly.');
-
-      const response = await fetch('/api/test-gmail-simple');
-      const result = await response.json();
-
-      if (result.success) {
-        alert('🎉 Google APIs Package Test Successful!\n\n✅ googleapis package is working correctly\n📦 JWT auth object created successfully\n\n💡 The package is installed and working!');
-      } else {
-        alert('❌ Google APIs Package Test Failed!\n\nError: ' + (result.error || 'Unknown error') + '\n\nDetails: ' + (result.details || 'No details available') + '\n\n💡 There might be an issue with the googleapis package installation.');
-      }
-    } catch (error) {
-      console.error('Google APIs package test error:', error);
-      alert('❌ Google APIs package test failed. Please check the console for details.');
-    } finally {
-      const button = document.querySelector('[data-test-gmail-simple]') as HTMLButtonElement;
-      if (button) {
-        button.disabled = false;
-        button.innerHTML = '<Mail className="h-4 w-4 mr-2" /> Test Google APIs';
+        button.innerHTML = '<Mail className="h-4 w-4 mr-2" /> Test Email Webhook';
       }
     }
   };
@@ -574,113 +475,10 @@ export default function Dashboard() {
             <p className="text-slate-600">Track your spending and income with AI-powered insights</p>
           </div>
           <div className="flex items-center gap-2">
-            {/* Email Connection Status */}
-            {emailConnectionStatus.connected ? (
-              <div className="flex items-center gap-2 bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm">
-                <CheckCircle className="h-4 w-4" />
-                <span>Connected: {emailConnectionStatus.emailAddress}</span>
-              </div>
-            ) : (
-              <Button 
-                variant="outline" 
-                size="sm"
-                data-connect-gmail
-                onClick={connectGmail}
-                className="bg-blue-50 border-blue-200 text-blue-700 hover:bg-blue-100"
-                title="REAL Email Processing - Connects to your actual email server via IMAP"
-              >
-                <Mail className="h-4 w-4 mr-2" />
-                Process Real Emails
-              </Button>
-            )}
-            
-            <Button 
-              variant="default" 
-              size="sm"
-              data-email-check
-              className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white border-0 shadow-lg hover:shadow-xl transition-all duration-300"
-              title="AI-powered email receipt processing - scans your inbox for receipt PDFs and automatically adds them to your ledger"
-              onClick={async () => {
-                try {
-                  // Show loading state with step-by-step animation
-                  const button = event?.target as HTMLButtonElement;
-                  if (button) {
-                    button.disabled = true;
-                    
-                    // Step 1: Connecting to email
-                    button.innerHTML = '<RefreshCw className="h-4 w-4 mr-2 animate-spin" /> Connecting...';
-                    await new Promise(resolve => setTimeout(resolve, 1000));
-                    
-                    // Step 2: Scanning emails
-                    button.innerHTML = '<RefreshCw className="h-4 w-4 mr-2 animate-spin" /> Scanning...';
-                    await new Promise(resolve => setTimeout(resolve, 1500));
-                    
-                    // Step 3: Processing receipts
-                    button.innerHTML = '<RefreshCw className="h-4 w-4 mr-2 animate-spin" /> Processing...';
-                    await new Promise(resolve => setTimeout(resolve, 1000));
-                  }
-
-                  const response = await fetch('/api/test-backend');
-                  const result = await response.json();
-                  
-                  // Show success message with enhanced demo
-                  const message = result.result?.data?.message || result.message || 'Successfully checked for receipt emails';
-                  const isDemo = result.result?.data?.demoMode || false;
-                  const receiptsAdded = result.result?.data?.receiptsAdded || 0;
-                  
-                  // Check if Gmail is connected
-                  if (emailConnectionStatus.connected) {
-                    // Real Gmail processing simulation
-                    const realSteps = [
-                      '📧 Connected to Gmail API',
-                      '🔍 Scanned inbox for receipt PDFs',
-                      '🤖 AI extracted transaction details',
-                      '📊 Added to financial ledger',
-                      '✅ Ready for bank statement matching'
-                    ];
-                    
-                    const realMessage = `🎉 **Gmail Processing Complete!**\n\n${realSteps.join('\n')}\n\n📈 **Added ${receiptsAdded} new receipts**\n\n💡 **Real Gmail Integration:**\n• Secure OAuth authentication\n• Real-time email monitoring\n• Automatic PDF processing\n• Instant ledger updates`;
-                    
-                    alert(realMessage);
-                  } else if (isDemo) {
-                    // Demo mode
-                    const demoSteps = [
-                      '📧 Connected to email server',
-                      '🔍 Scanned inbox for receipt PDFs',
-                      '🤖 AI extracted transaction details',
-                      '📊 Added to financial ledger',
-                      '✅ Ready for bank statement matching'
-                    ];
-                    
-                    const demoMessage = `🎉 **Email AI Demo Complete!**\n\n${demoSteps.join('\n')}\n\n📈 **Added ${receiptsAdded} new receipts**\n\n💡 **In Production:**\n• Real-time email monitoring\n• Automatic PDF processing\n• Instant ledger updates\n• Smart transaction matching`;
-                    
-                    alert(demoMessage);
-                  } else {
-                    alert(`✅ Email Processing Complete!\n\n${message}\n\nThis feature automatically:\n• Scans your email for receipt PDFs\n• Extracts transaction details using AI\n• Adds them to your ledger\n• Matches them with bank statements`);
-                  }
-                  
-                  // Show notification and refresh data
-                  setShowEmailNotification(true);
-                  setTimeout(() => setShowEmailNotification(false), 5000); // Hide after 5 seconds
-                  
-                  // Refresh data to show new entries
-                  fetchData();
-                } catch (error) {
-                  console.error('Error checking emails:', error);
-                  alert('❌ Email check failed. This is expected if email credentials are not configured.\n\nFor demo purposes, you can upload receipt images manually.');
-                } finally {
-                  // Reset button
-                  const button = document.querySelector('[data-email-check]') as HTMLButtonElement;
-                  if (button) {
-                    button.disabled = false;
-                    button.innerHTML = '<RefreshCw className="h-4 w-4 mr-2" /> Check Emails';
-                  }
-                }
-              }}
-            >
-              <RefreshCw className="h-4 w-4 mr-2" />
-              Check Emails
-            </Button>
+            {/* Email Webhook Status */}
+            <div className="text-sm text-gray-600">
+              Email processing via webhook
+            </div>
             <Button 
               variant="outline" 
               size="sm"
@@ -1104,37 +902,13 @@ export default function Dashboard() {
                   <Button 
                     className="w-full justify-start" 
                     variant="outline"
-                    onClick={testWebhook}
+                    onClick={testEmailWebhook}
+                    data-test-webhook
                   >
                     <Mail className="h-4 w-4 mr-2" />
-                    Test Webhook
+                    Test Email Webhook
                   </Button>
-                  <Button 
-                    className="w-full justify-start" 
-                    variant="outline"
-                    onClick={testResend}
-                  >
-                    <Mail className="h-4 w-4 mr-2" />
-                    Test Resend
-                  </Button>
-                  <Button 
-                    className="w-full justify-start" 
-                    variant="outline"
-                    onClick={testGmailAPI}
-                    data-test-gmail
-                  >
-                    <Mail className="h-4 w-4 mr-2" />
-                    Test Gmail API
-                  </Button>
-                  <Button 
-                    className="w-full justify-start" 
-                    variant="outline"
-                    onClick={testGmailAPISimple}
-                    data-test-gmail-simple
-                  >
-                    <Mail className="h-4 w-4 mr-2" />
-                    Test Google APIs
-                  </Button>
+                  
                 </CardContent>
               </Card>
             </div>
