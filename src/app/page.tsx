@@ -254,7 +254,7 @@ export default function Dashboard() {
       console.log('OAuth URL:', authUrl);
 
       // Show the URL first for debugging
-      alert(`OAuth URL:\n\n${authUrl}\n\nRedirect URI: ${redirectUri}\n\nAdd this redirect URI to Google Cloud Console and click OK to proceed.`);
+      alert(`OAuth URL:\n\n${authUrl}\n\nRedirect URI: ${redirectUri}\n\nIMPORTANT: Add this redirect URI to Google Cloud Console:\n${redirectUri}\n\nClick OK to proceed to Google OAuth.`);
       
       // REDIRECT TO REAL GOOGLE OAUTH
       window.location.href = authUrl;

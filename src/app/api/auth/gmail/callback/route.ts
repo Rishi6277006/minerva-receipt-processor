@@ -13,12 +13,18 @@ export async function GET(request: NextRequest) {
     // Exchange the authorization code for tokens
     const clientId = process.env.GOOGLE_CLIENT_ID;
     const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
-    const redirectUri = 'https://minerva-receipt-processor-frontend-eox5tnagv.vercel.app/';
+    
+    // Use the current domain dynamically
+    const currentDomain = request.nextUrl.origin;
+    const redirectUri = `${currentDomain}/`;
     
     if (!clientId || !clientSecret) {
       console.error('Google OAuth credentials not configured');
       return NextResponse.redirect(new URL('/?error=oauth_not_configured', request.url));
     }
+
+    console.log('OAuth Callback - Current Domain:', currentDomain);
+    console.log('OAuth Callback - Redirect URI:', redirectUri);
 
     // Exchange code for tokens
     const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
@@ -77,12 +83,18 @@ export async function POST(request: NextRequest) {
     // Exchange the authorization code for tokens
     const clientId = process.env.GOOGLE_CLIENT_ID;
     const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
-    const redirectUri = 'https://minerva-receipt-processor-frontend-eox5tnagv.vercel.app/';
+    
+    // Use the current domain dynamically
+    const currentDomain = request.nextUrl.origin;
+    const redirectUri = `${currentDomain}/`;
     
     if (!clientId || !clientSecret) {
       console.error('Google OAuth credentials not configured');
       return NextResponse.json({ success: false, error: 'OAuth not configured' });
     }
+
+    console.log('OAuth Callback POST - Current Domain:', currentDomain);
+    console.log('OAuth Callback POST - Redirect URI:', redirectUri);
 
     // Exchange code for tokens
     const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
