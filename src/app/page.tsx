@@ -504,6 +504,36 @@ export default function Dashboard() {
     }
   };
 
+  const testGmailAPISimple = async () => {
+    try {
+      const button = event?.target as HTMLButtonElement;
+      if (button) {
+        button.disabled = true;
+        button.innerHTML = '<RefreshCw className="h-4 w-4 mr-2 animate-spin" /> Testing...';
+      }
+
+      alert('🧪 Testing googleapis package...\n\nThis will test if the googleapis package is working correctly.');
+
+      const response = await fetch('/api/test-gmail-simple');
+      const result = await response.json();
+
+      if (result.success) {
+        alert('🎉 Google APIs Package Test Successful!\n\n✅ googleapis package is working correctly\n📦 JWT auth object created successfully\n\n💡 The package is installed and working!');
+      } else {
+        alert('❌ Google APIs Package Test Failed!\n\nError: ' + (result.error || 'Unknown error') + '\n\nDetails: ' + (result.details || 'No details available') + '\n\n💡 There might be an issue with the googleapis package installation.');
+      }
+    } catch (error) {
+      console.error('Google APIs package test error:', error);
+      alert('❌ Google APIs package test failed. Please check the console for details.');
+    } finally {
+      const button = document.querySelector('[data-test-gmail-simple]') as HTMLButtonElement;
+      if (button) {
+        button.disabled = false;
+        button.innerHTML = '<Mail className="h-4 w-4 mr-2" /> Test Google APIs';
+      }
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
@@ -1095,6 +1125,15 @@ export default function Dashboard() {
                   >
                     <Mail className="h-4 w-4 mr-2" />
                     Test Gmail API
+                  </Button>
+                  <Button 
+                    className="w-full justify-start" 
+                    variant="outline"
+                    onClick={testGmailAPISimple}
+                    data-test-gmail-simple
+                  >
+                    <Mail className="h-4 w-4 mr-2" />
+                    Test Google APIs
                   </Button>
                 </CardContent>
               </Card>
