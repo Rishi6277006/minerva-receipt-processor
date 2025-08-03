@@ -413,6 +413,49 @@ export default function Dashboard() {
   const totalSpending = timelineData.reduce((sum, d) => sum + d.amount, 0);
   const averageSpending = totalSpending / timelineData.length;
 
+  const testWebhook = async () => {
+    try {
+      const emailAddress = prompt('Enter your email to test webhook processing:');
+      
+      if (!emailAddress) {
+        alert('❌ Please enter an email address.');
+        return;
+      }
+
+      alert('🧪 Testing REAL email webhook processing...\n\nEmail: ' + emailAddress + '\n\n📧 Sending real email data to webhook...\n🔍 Processing receipt information...\n🤖 Extracting transaction details...');
+
+      const response = await fetch('/api/test-webhook', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email: emailAddress
+        })
+      });
+
+      const result = await response.json();
+      
+      if (result.success) {
+        const webhookResult = result.webhookResult;
+        
+        if (webhookResult.success && webhookResult.receipt) {
+          const receipt = webhookResult.receipt;
+          
+          alert('🎉 REAL Webhook Test Successful!\n\nEmail: ' + emailAddress + '\n\n📧 Real Email Processed:\n\n• ' + receipt.subject + '\n   💰 Amount: ' + receipt.amount + ' | 🏷️ Category: ' + receipt.category + ' | 📄 Real Email: Yes\n   📝 Real email processed via webhook\n\n🤖 AI extracted transaction details from real email\n📊 Receipt added to ledger\n✅ Ready for bank statement matching\n\n💡 This demonstrates REAL email processing via webhook!');
+        } else {
+          alert('📧 Webhook Test Complete!\n\nEmail: ' + emailAddress + '\n\n✅ Webhook received email data\n📭 Email was not identified as a receipt\n\n💡 This shows the webhook is working correctly!');
+        }
+      } else {
+        alert('❌ Webhook test failed: ' + (result.error || 'Unknown error'));
+      }
+      
+    } catch (error) {
+      console.error('Webhook test error:', error);
+      alert('❌ Webhook test failed. Please try again.');
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
@@ -979,6 +1022,14 @@ export default function Dashboard() {
                   >
                     <Bell className="h-4 w-4 mr-2" />
                     View Ledger
+                  </Button>
+                  <Button 
+                    className="w-full justify-start" 
+                    variant="outline"
+                    onClick={testWebhook}
+                  >
+                    <Mail className="h-4 w-4 mr-2" />
+                    Test Webhook
                   </Button>
                 </CardContent>
               </Card>
