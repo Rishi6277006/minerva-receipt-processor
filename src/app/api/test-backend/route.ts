@@ -72,13 +72,46 @@ export async function POST(request: NextRequest) {
 
     const result = await response.json();
     
-    // If it's an email check, return a success response with realistic data
+    // If it's an email check, try to process real emails
     if (action === 'checkForReceiptsForUser') {
+      try {
+        // Try to connect to the backend for real email processing
+        const emailResponse = await fetch(`${backendUrl}/trpc/email.processRealEmails`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            json: {
+              email: email,
+              userId: userId || 'demo-user'
+            }
+          })
+        });
+
+        const emailResult = await emailResponse.json();
+        
+        if (emailResult.result?.data?.success) {
+          // Real email processing worked
+          return NextResponse.json({
+            success: true,
+            receiptsFound: emailResult.result.data.receiptCount || 0,
+            email: email,
+            message: 'Real email processing completed successfully',
+            realData: true
+          });
+        }
+      } catch (emailError) {
+        console.log('Real email processing failed, using fallback');
+      }
+      
+      // Fallback to realistic demo data
       return NextResponse.json({
         success: true,
         receiptsFound: 5,
         email: email,
-        message: 'Email processing completed successfully'
+        message: 'Email processing completed successfully (demo mode)',
+        realData: false
       });
     }
     
