@@ -273,10 +273,20 @@ export default function Dashboard() {
             const receiptDetails = receipts.map((receipt: any) => {
               const extractedInfo = receipt.extractedData ? 
                 `\n   💰 Amount: ${receipt.amount} | 🏷️ Category: ${receipt.category} | 📄 Real Email: ${receipt.realEmail ? 'Yes' : 'No'}` : '';
-              return `• ${receipt.subject}${extractedInfo}`;
+              const note = receipt.note ? `\n   📝 ${receipt.note}` : '';
+              return `• ${receipt.subject}${extractedInfo}${note}`;
             }).join('\n\n');
             
-            alert('🎉 Email Processing Complete!\n\nEmail: ' + emailAddress + '\n\n📧 Found ' + receiptCount + ' receipt emails in your inbox:\n\n' + receiptDetails + '\n\n🤖 AI extracted transaction details from your emails\n📊 All receipts added to ledger\n✅ Ready for bank statement matching\n\n💡 This simulates real email processing with your actual email address!');
+            const isRealData = receipts.some((r: any) => r.realEmail);
+            const message = isRealData ? 
+              '🎉 REAL Email Processing Complete!' :
+              '📧 Email Processing Simulation Complete!';
+            
+            const footer = isRealData ?
+              '\n💡 This connected to your actual email server and processed real emails!' :
+              '\n💡 This simulates real email processing. In production, this would connect to your actual email server and read real receipts.';
+            
+            alert(message + '\n\nEmail: ' + emailAddress + '\n\n📧 Found ' + receiptCount + ' receipt emails in your inbox:\n\n' + receiptDetails + '\n\n🤖 AI extracted transaction details from your emails\n📊 All receipts added to ledger\n✅ Ready for bank statement matching' + footer);
           }
           
           // Refresh the dashboard
