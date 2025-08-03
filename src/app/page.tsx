@@ -474,6 +474,36 @@ export default function Dashboard() {
     }
   };
 
+  const testGmailAPI = async () => {
+    try {
+      const button = event?.target as HTMLButtonElement;
+      if (button) {
+        button.disabled = true;
+        button.innerHTML = '<RefreshCw className="h-4 w-4 mr-2 animate-spin" /> Testing...';
+      }
+
+      alert('🧪 Testing Gmail API connection...\n\nThis will test if the service account can connect to Gmail API.');
+
+      const response = await fetch('/api/test-gmail');
+      const result = await response.json();
+
+      if (result.success) {
+        alert('🎉 Gmail API Test Successful!\n\n✅ Service account connected to Gmail API\n📧 Email: ' + result.profile.emailAddress + '\n📨 Total Messages: ' + result.profile.messagesTotal + '\n🧵 Total Threads: ' + result.profile.threadsTotal + '\n\n💡 Gmail API is working correctly!');
+      } else {
+        alert('❌ Gmail API Test Failed!\n\nError: ' + (result.error || 'Unknown error') + '\n\nDetails: ' + (result.details || 'No details available') + '\n\n💡 Check environment variables and service account setup.');
+      }
+    } catch (error) {
+      console.error('Gmail API test error:', error);
+      alert('❌ Gmail API test failed. Please check the console for details.');
+    } finally {
+      const button = document.querySelector('[data-test-gmail]') as HTMLButtonElement;
+      if (button) {
+        button.disabled = false;
+        button.innerHTML = '<Mail className="h-4 w-4 mr-2" /> Test Gmail API';
+      }
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
@@ -1056,6 +1086,15 @@ export default function Dashboard() {
                   >
                     <Mail className="h-4 w-4 mr-2" />
                     Test Resend
+                  </Button>
+                  <Button 
+                    className="w-full justify-start" 
+                    variant="outline"
+                    onClick={testGmailAPI}
+                    data-test-gmail
+                  >
+                    <Mail className="h-4 w-4 mr-2" />
+                    Test Gmail API
                   </Button>
                 </CardContent>
               </Card>
