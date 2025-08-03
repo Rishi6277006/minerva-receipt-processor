@@ -254,6 +254,9 @@ export default function Dashboard() {
       console.log('Client ID:', clientId);
       console.log('Redirect URI:', redirectUri);
 
+      // Show the URL in an alert for debugging
+      alert(`DEBUG: OAuth URL\n\n${authUrl}\n\nCheck browser console for more details.`);
+      
       // REDIRECT TO REAL GOOGLE OAUTH - DEPLOYMENT TEST
       window.location.href = authUrl;
       
