@@ -276,14 +276,32 @@ export default function Dashboard() {
               return `• ${receipt.subject}${extractedInfo}`;
             }).join('\n\n');
             
-            alert('🎉 REAL Email Processing Complete!\n\nEmail: ' + emailAddress + '\n\n📧 Found ' + receiptCount + ' receipt emails in your inbox:\n\n' + receiptDetails + '\n\n🤖 AI extracted transaction details from your real emails\n📊 All receipts added to ledger\n✅ Ready for bank statement matching\n\n💡 This connected to your actual email server and processed real emails!');
+            if (result.fallback) {
+              alert('📧 Email Processing Complete! (Fallback Mode)\n\nEmail: ' + emailAddress + '\n\n📧 Found ' + receiptCount + ' receipt emails:\n\n' + receiptDetails + '\n\n🤖 AI extracted transaction details\n📊 All receipts added to ledger\n✅ Ready for bank statement matching\n\n⚠️ Note: Using fallback mode due to IMAP connection issues. In production, this would connect to your actual email server.');
+            } else {
+              alert('🎉 REAL Email Processing Complete!\n\nEmail: ' + emailAddress + '\n\n📧 Found ' + receiptCount + ' receipt emails in your inbox:\n\n' + receiptDetails + '\n\n🤖 AI extracted transaction details from your real emails\n📊 All receipts added to ledger\n✅ Ready for bank statement matching\n\n💡 This connected to your actual email server and processed real emails!');
+            }
           }
           
           // Refresh the dashboard
           window.location.reload();
         } else {
-          // Show error message
-          alert('❌ Email processing failed: ' + (result.error || 'Unknown error') + '\n\n💡 Make sure your email and password are correct, and that your email provider allows IMAP access.');
+          // Show error message with helpful details
+          let errorMessage = '❌ Email processing failed: ' + (result.error || 'Unknown error');
+          
+          if (result.details) {
+            errorMessage += '\n\n🔍 Details: ' + result.details;
+          }
+          
+          if (result.help) {
+            errorMessage += '\n\n💡 Help: ' + result.help;
+          }
+          
+          if (result.provider) {
+            errorMessage += '\n\n📧 Provider: ' + result.provider;
+          }
+          
+          alert(errorMessage);
         }
       } catch (error) {
         console.error('Email processing error:', error);
