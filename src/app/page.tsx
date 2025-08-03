@@ -54,69 +54,69 @@ export default function Dashboard() {
     provider: string | null;
   }>({ connected: false, emailAddress: null, provider: null });
 
-  const fetchData = async () => {
-    try {
+    const fetchData = async () => {
+      try {
       setIsRefreshing(true);
-      // Fetch ledger data
-      const ledgerResponse = await fetch('/api/ledger');
-      const ledgerResult = await ledgerResponse.json();
+        // Fetch ledger data
+        const ledgerResponse = await fetch('/api/ledger');
+        const ledgerResult = await ledgerResponse.json();
       const ledgerData = ledgerResult.result?.data || [];
       setLedgerData(ledgerData);
 
-      // Fetch bank data
-      const bankResponse = await fetch('/api/bank');
-      const bankResult = await bankResponse.json();
+        // Fetch bank data
+        const bankResponse = await fetch('/api/bank');
+        const bankResult = await bankResponse.json();
       const bankData = bankResult.result?.data || [];
       setBankData(bankData);
 
-      // Calculate totals
+        // Calculate totals
       const spent = ledgerData.reduce((sum: number, entry: any) => sum + (entry.amount || 0), 0);
-      setTotalSpent(spent);
+        setTotalSpent(spent);
 
       const income = bankData
-        .filter((tx: any) => tx.type === 'CREDIT')
+          .filter((tx: any) => tx.type === 'CREDIT')
         .reduce((sum: number, tx: any) => sum + (tx.amount || 0), 0);
-      setTotalIncome(income);
+        setTotalIncome(income);
 
-      // Category breakdown
-      const categories: Record<string, number> = {};
+        // Category breakdown
+        const categories: Record<string, number> = {};
       ledgerData.forEach((entry: any) => {
         if (entry.category && entry.amount) {
           categories[entry.category] = (categories[entry.category] || 0) + entry.amount;
         }
-      });
-      setCategoryBreakdown(categories);
+        });
+        setCategoryBreakdown(categories);
 
-      // Monthly trend
-      const monthly: Record<string, number> = {};
+        // Monthly trend
+        const monthly: Record<string, number> = {};
       ledgerData.forEach((entry: any) => {
         if (entry.transactionDate && entry.amount) {
           const month = new Date(entry.transactionDate).toLocaleDateString('en-US', { month: 'short' });
           monthly[month] = (monthly[month] || 0) + entry.amount;
         }
-      });
-      setMonthlyTrend(monthly);
+        });
+        setMonthlyTrend(monthly);
 
-    } catch (error) {
-      console.error('Error fetching data:', error);
-      // Fallback to mock data if backend is not available
-      setLedgerData([
-        { id: '1', vendor: 'Starbucks Coffee', amount: 12.50, category: 'Food & Beverage', transactionDate: '2024-01-15', description: 'Venti Caramel Macchiato' },
-        { id: '2', vendor: 'Amazon.com', amount: 89.99, category: 'Shopping', transactionDate: '2024-01-16', description: 'Wireless headphones' },
-        { id: '3', vendor: 'Shell Gas Station', amount: 45.67, category: 'Transportation', transactionDate: '2024-01-17', description: 'Gas fill-up' },
-      ]);
-      setBankData([
-        { id: '1', description: 'STARBUCKS COFFEE', amount: 12.50, type: 'DEBIT', transactionDate: '2024-01-15' },
-        { id: '2', description: 'AMAZON.COM', amount: 89.99, type: 'DEBIT', transactionDate: '2024-01-16' },
-        { id: '3', description: 'SALARY DEPOSIT', amount: 2500.00, type: 'CREDIT', transactionDate: '2024-01-25' },
-      ]);
-      setTotalSpent(148.16);
-      setTotalIncome(2500.00);
-    } finally {
-      setIsLoading(false);
+      } catch (error) {
+        console.error('Error fetching data:', error);
+        // Fallback to mock data if backend is not available
+        setLedgerData([
+          { id: '1', vendor: 'Starbucks Coffee', amount: 12.50, category: 'Food & Beverage', transactionDate: '2024-01-15', description: 'Venti Caramel Macchiato' },
+          { id: '2', vendor: 'Amazon.com', amount: 89.99, category: 'Shopping', transactionDate: '2024-01-16', description: 'Wireless headphones' },
+          { id: '3', vendor: 'Shell Gas Station', amount: 45.67, category: 'Transportation', transactionDate: '2024-01-17', description: 'Gas fill-up' },
+        ]);
+        setBankData([
+          { id: '1', description: 'STARBUCKS COFFEE', amount: 12.50, type: 'DEBIT', transactionDate: '2024-01-15' },
+          { id: '2', description: 'AMAZON.COM', amount: 89.99, type: 'DEBIT', transactionDate: '2024-01-16' },
+          { id: '3', description: 'SALARY DEPOSIT', amount: 2500.00, type: 'CREDIT', transactionDate: '2024-01-25' },
+        ]);
+        setTotalSpent(148.16);
+        setTotalIncome(2500.00);
+      } finally {
+        setIsLoading(false);
       setIsRefreshing(false);
-    }
-  };
+      }
+    };
 
   useEffect(() => {
     fetchData();
@@ -516,10 +516,10 @@ export default function Dashboard() {
               <div className="p-2 bg-green-100 rounded-full">
                 <CheckCircle className="h-5 w-5 text-green-600" />
               </div>
-              <div>
+          <div>
                 <h3 className="font-semibold text-green-800">Email Processing Complete!</h3>
                 <p className="text-sm text-green-600">New receipts have been added to your ledger via AI email processing.</p>
-              </div>
+          </div>
             </div>
           </div>
         )}
@@ -785,22 +785,22 @@ export default function Dashboard() {
                 <CardContent className="space-y-4">
                   {ledgerData.slice(0, 5).map((entry, index) => (
                     <div key={index} className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
-                      <div className="flex items-center gap-3">
+                          <div className="flex items-center gap-3">
                         <div className={`p-2 rounded-full ${getCategoryColor(entry.category)}`}>
                           {React.createElement(getCategoryIcon(entry.category), { className: 'h-4 w-4 text-white' })}
-                        </div>
-                        <div>
-                          <p className="font-medium text-slate-800">{entry.vendor}</p>
+                            </div>
+                            <div>
+                              <p className="font-medium text-slate-800">{entry.vendor}</p>
                           <p className="text-sm text-slate-600">{entry.category}</p>
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <p className="font-bold text-slate-800">${entry.amount.toFixed(2)}</p>
+                            <p className="text-xs text-slate-500">
+                              {new Date(entry.transactionDate).toLocaleDateString()}
+                            </p>
+                          </div>
                         </div>
-                      </div>
-                      <div className="text-right">
-                        <p className="font-bold text-slate-800">${entry.amount.toFixed(2)}</p>
-                        <p className="text-xs text-slate-500">
-                          {new Date(entry.transactionDate).toLocaleDateString()}
-                        </p>
-                      </div>
-                    </div>
                   ))}
                 </CardContent>
               </Card>
@@ -817,20 +817,20 @@ export default function Dashboard() {
                 <CardContent className="space-y-4">
                   {Object.entries(categoryBreakdown).map(([category, amount]) => (
                     <div key={category} className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-3">
                         <div className={`p-2 rounded-full ${getCategoryColor(category)}`}>
                           {React.createElement(getCategoryIcon(category), { className: 'h-4 w-4 text-white' })}
-                        </div>
+                          </div>
                         <span className="font-medium text-slate-800">{category}</span>
-                      </div>
-                      <div className="text-right">
+                        </div>
+                        <div className="text-right">
                         <p className="font-bold text-slate-800">${amount.toFixed(2)}</p>
-                        <p className="text-xs text-slate-500">
+                          <p className="text-xs text-slate-500">
                           {((amount / totalSpent) * 100).toFixed(1)}%
-                        </p>
+                          </p>
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    ))}
                 </CardContent>
               </Card>
             </div>
@@ -838,23 +838,23 @@ export default function Dashboard() {
 
           <TabsContent value="analytics" className="space-y-6">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {/* Spending Timeline */}
-              <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-lg">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
+            {/* Spending Timeline */}
+            <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-lg">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
                     <TrendingUp className="h-5 w-5 text-green-500" />
-                    Spending Timeline
-                  </CardTitle>
+                  Spending Timeline
+                </CardTitle>
                   <CardDescription>Daily spending over the last 30 days</CardDescription>
-                </CardHeader>
-                <CardContent>
+              </CardHeader>
+              <CardContent>
                   <div className="h-64 flex items-end justify-between gap-1">
                     {timelineData.map((day, index) => (
                       <div
                         key={index}
                         className={`flex-1 bg-gradient-to-t from-blue-500 to-blue-300 rounded-t transition-all duration-300 hover:from-blue-600 hover:to-blue-400 ${
                           day.isToday ? 'ring-2 ring-blue-500 ring-offset-2' : ''
-                        }`}
+                              }`}
                         style={{
                           height: `${(day.amount / maxAmount) * 100}%`,
                           minHeight: '4px'
@@ -862,75 +862,75 @@ export default function Dashboard() {
                         title={`${day.date.toLocaleDateString()}: $${day.amount.toFixed(2)}`}
                       ></div>
                     ))}
-                  </div>
+                                </div>
                   <div className="mt-4 grid grid-cols-3 gap-4 text-center">
                     <div>
                       <p className="text-2xl font-bold text-blue-600">${totalSpending.toFixed(2)}</p>
                       <p className="text-sm text-slate-600">Total 30 Days</p>
-                    </div>
+                              </div>
                     <div>
                       <p className="text-2xl font-bold text-green-600">${averageSpending.toFixed(2)}</p>
                       <p className="text-sm text-slate-600">Daily Average</p>
-                    </div>
-                    <div>
+                          </div>
+                          <div>
                       <p className="text-2xl font-bold text-purple-600">{timelineData.filter(d => d.amount > 0).length}</p>
                       <p className="text-sm text-slate-600">Active Days</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+                          </div>
+                </div>
+              </CardContent>
+            </Card>
 
               {/* Monthly Trends */}
-              <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-lg">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
+            <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-lg">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
                     <Calendar className="h-5 w-5 text-orange-500" />
                     Monthly Trends
-                  </CardTitle>
+                </CardTitle>
                   <CardDescription>Spending patterns by month</CardDescription>
-                </CardHeader>
-                <CardContent>
+              </CardHeader>
+              <CardContent>
                   <div className="space-y-4">
                     {Object.entries(monthlyTrend).map(([month, amount]) => (
                       <div key={month} className="flex items-center justify-between">
                         <span className="font-medium text-slate-800">{month}</span>
                         <div className="flex items-center gap-2">
                           <div className="w-24 bg-slate-200 rounded-full h-2">
-                            <div
+                              <div 
                               className="bg-orange-500 h-2 rounded-full transition-all duration-500"
                               style={{
                                 width: `${(amount / Math.max(...Object.values(monthlyTrend))) * 100}%`
                               }}
-                            ></div>
-                          </div>
+                              ></div>
+                            </div>
                           <span className="font-bold text-slate-800 w-16 text-right">${amount.toFixed(2)}</span>
+                          </div>
                         </div>
-                      </div>
                     ))}
-                  </div>
+                      </div>
                   <div className="mt-6 grid grid-cols-3 gap-4 text-center">
-                    <div className="text-center">
+                      <div className="text-center">
                       <p className="text-2xl font-bold text-orange-600">
-                        ${Math.max(...Object.values(monthlyTrend)).toFixed(2)}
-                      </p>
-                      <p className="text-sm text-slate-600">Highest Month</p>
+                          ${Math.max(...Object.values(monthlyTrend)).toFixed(2)}
+                        </p>
+                        <p className="text-sm text-slate-600">Highest Month</p>
+                      </div>
+                      <div className="text-center">
+                        <p className="text-2xl font-bold text-purple-600">
+                          ${(Object.values(monthlyTrend).reduce((a, b) => a + b, 0) / Object.values(monthlyTrend).length).toFixed(2)}
+                        </p>
+                        <p className="text-sm text-slate-600">Average Monthly</p>
+                      </div>
+                      <div className="text-center">
+                        <p className="text-2xl font-bold text-green-600">
+                          {Object.keys(monthlyTrend).length}
+                        </p>
+                        <p className="text-sm text-slate-600">Months Tracked</p>
+                      </div>
                     </div>
-                    <div className="text-center">
-                      <p className="text-2xl font-bold text-purple-600">
-                        ${(Object.values(monthlyTrend).reduce((a, b) => a + b, 0) / Object.values(monthlyTrend).length).toFixed(2)}
-                      </p>
-                      <p className="text-sm text-slate-600">Average Monthly</p>
-                    </div>
-                    <div className="text-center">
-                      <p className="text-2xl font-bold text-green-600">
-                        {Object.keys(monthlyTrend).length}
-                      </p>
-                      <p className="text-sm text-slate-600">Months Tracked</p>
-                    </div>
-                  </div>
                 </CardContent>
               </Card>
-            </div>
+                  </div>
           </TabsContent>
 
           <TabsContent value="timeline" className="space-y-6">

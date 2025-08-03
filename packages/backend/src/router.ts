@@ -121,7 +121,7 @@ export const appRouter = t.router({
       }
     }),
 
-        uploadStatement: t.procedure
+    uploadStatement: t.procedure
       .input(z.object({
         csvData: z.string()
       }))
@@ -138,25 +138,25 @@ export const appRouter = t.router({
           }
           
           console.log(`AI parsed ${parsedTransactions.length} transactions`);
-          
+
           const transactions: any[] = [];
-          
+                 
           // Store each transaction in the database
           for (const parsedTx of parsedTransactions) {
             try {
-              const transaction = await ctx.prisma.bankTransaction.create({
-                data: {
+                  const transaction = await ctx.prisma.bankTransaction.create({
+                    data: {
                   description: parsedTx.description,
                   amount: parsedTx.amount,
                   transactionDate: new Date(parsedTx.date),
                   type: parsedTx.type,
                   sourceFile: 'ai-parsed-csv'
-                }
-              });
-              transactions.push(transaction);
-            } catch (error) {
+                    }
+                  });
+                  transactions.push(transaction);
+              } catch (error) {
               console.log('Error storing transaction:', parsedTx, error);
-            }
+                }
           }
           
           console.log(`Successfully stored ${transactions.length} transactions`);
@@ -314,8 +314,8 @@ export const appRouter = t.router({
         } catch (error) {
           console.error('Error disconnecting email:', error);
           throw new Error('Failed to disconnect email');
-        }
-      }),
+      }
+    }),
 
     getStatus: t.procedure.query(() => {
       return {
