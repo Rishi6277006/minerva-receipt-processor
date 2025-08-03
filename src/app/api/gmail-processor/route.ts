@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { google } from 'googleapis';
 
-// Realistic Gmail API processor simulation
+// Real Gmail API processor using service account
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
@@ -10,66 +11,69 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Email required' }, { status: 400 });
     }
 
-    console.log('Starting REAL Gmail API processing simulation for:', email);
+    console.log('Starting REAL Gmail API processing for:', email);
 
-    // Simulate Gmail API connection
+    // Create service account credentials
+    const auth = new google.auth.GoogleAuth({
+      scopes: ['https://www.googleapis.com/auth/gmail.readonly'],
+      keyFile: undefined, // Will use default credentials or environment
+    });
+
+    // Create Gmail API client
+    const gmail = google.gmail({ version: 'v1', auth });
+
     console.log('Connecting to Gmail API...');
-    await new Promise(resolve => setTimeout(resolve, 2000)); // Simulate connection time
 
-    console.log('Searching for receipt emails...');
-    await new Promise(resolve => setTimeout(resolve, 1500)); // Simulate search time
+    // Search for receipt emails
+    const searchQuery = 'from:(amazon.com OR starbucks.com OR uber.com OR netflix.com OR spotify.com OR apple.com) subject:(receipt OR invoice OR order OR payment OR confirmation)';
+    
+    const response = await gmail.users.messages.list({
+      userId: 'me',
+      q: searchQuery,
+      maxResults: 10
+    });
 
-    // Simulate finding real emails in Gmail
-    const realEmails = [
-      {
-        subject: 'Amazon Order Confirmation - Order #12345',
-        from: 'orders@amazon.com',
-        date: new Date().toISOString(),
-        text: 'Thank you for your order! Your total was $89.99. Order details: Product A ($45.99), Product B ($44.00).',
-        html: '<h2>Order Confirmation</h2><p>Total: $89.99</p><p>Thank you for shopping with Amazon!</p>',
-        attachments: []
-      },
-      {
-        subject: 'Starbucks Receipt - Thank you for your purchase',
-        from: 'receipts@starbucks.com',
-        date: new Date(Date.now() - 86400000).toISOString(), // 1 day ago
-        text: 'Your Starbucks purchase: Venti Latte - $8.75. Thank you for visiting Starbucks!',
-        html: '<h2>Starbucks Receipt</h2><p>Venti Latte: $8.75</p><p>Thank you for your purchase!</p>',
-        attachments: [
-          {
-            filename: 'starbucks-receipt.pdf',
-            contentType: 'application/pdf',
-            size: 1024
-          }
-        ]
-      },
-      {
-        subject: 'Uber Receipt - Your ride with John',
-        from: 'receipts@uber.com',
-        date: new Date(Date.now() - 172800000).toISOString(), // 2 days ago
-        text: 'Your Uber ride: $23.50. Thank you for using Uber!',
-        html: '<h2>Uber Receipt</h2><p>Ride: $23.50</p><p>Thank you for using Uber!</p>',
-        attachments: []
-      }
-    ];
+    const messages = response.data.messages || [];
+    console.log(`Found ${messages.length} potential receipt emails`);
 
-    console.log(`Found ${realEmails.length} real receipt emails in Gmail`);
-
-    // Process each real email
     const processedReceipts = [];
 
-    for (const email of realEmails) {
+    // Process each email
+    for (const message of messages) {
       try {
-        console.log('Processing real email:', email.subject);
+        console.log('Processing message:', message.id);
+        
+        const messageData = await gmail.users.messages.get({
+          userId: 'me',
+          id: message.id!
+        });
+
+        const headers = messageData.data.payload?.headers || [];
+        const subject = headers.find((h: any) => h.name === 'Subject')?.value || 'No Subject';
+        const from = headers.find((h: any) => h.name === 'From')?.value || 'Unknown Sender';
+        const date = headers.find((h: any) => h.name === 'Date')?.value || new Date().toISOString();
+
+        // Extract email body
+        let body = '';
+        if (messageData.data.payload?.body?.data) {
+          body = Buffer.from(messageData.data.payload.body.data, 'base64').toString();
+        } else if (messageData.data.payload?.parts) {
+          const textPart = messageData.data.payload.parts.find((part: any) => part.mimeType === 'text/plain');
+          if (textPart?.body?.data) {
+            body = Buffer.from(textPart.body.data, 'base64').toString();
+          }
+        }
+
+        console.log('Processing email:', subject);
 
         // Check if this is a receipt
-        const isReceipt = checkIfReceipt(email);
-
+        const isReceipt = checkIfReceipt({ subject, from, text: body });
+        
         if (isReceipt) {
-          const receiptData = await processReceiptEmail(email);
+          const receiptData = await processReceiptEmail({ subject, from, text: body, date });
           if (receiptData) {
             processedReceipts.push(receiptData);
-            console.log('Successfully processed real receipt:', receiptData);
+            console.log('Successfully processed receipt:', receiptData);
           }
         }
 
@@ -87,8 +91,7 @@ export async function POST(request: NextRequest) {
       receipts: processedReceipts,
       message: `Successfully processed ${processedReceipts.length} real receipt emails from ${email}`,
       realData: true,
-      source: 'gmail-api-simulation',
-      note: 'This is a realistic simulation. In production, this would connect to real Gmail API and read actual emails.'
+      source: 'gmail-api'
     });
 
   } catch (error) {
