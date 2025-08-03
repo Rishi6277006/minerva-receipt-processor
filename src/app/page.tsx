@@ -229,7 +229,7 @@ export default function Dashboard() {
       const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
       
       // Use the main app URL as redirect (simpler and more reliable)
-      const redirectUri = 'https://minerva-receipt-processor-frontend-2jdmzwe4c.vercel.app/';
+      const redirectUri = 'https://minerva-receipt-processor-frontend-eox5tnagv.vercel.app/';
       
       const scopes = [
         'https://www.googleapis.com/auth/gmail.readonly',

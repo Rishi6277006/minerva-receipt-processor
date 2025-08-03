@@ -13,7 +13,7 @@ export async function GET(request: NextRequest) {
     // Exchange the authorization code for tokens
     const clientId = process.env.GOOGLE_CLIENT_ID;
     const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
-    const redirectUri = 'https://minerva-receipt-processor-frontend-2jdmzwe4c.vercel.app/';
+    const redirectUri = 'https://minerva-receipt-processor-frontend-eox5tnagv.vercel.app/';
     
     if (!clientId || !clientSecret) {
       console.error('Google OAuth credentials not configured');
@@ -77,7 +77,7 @@ export async function POST(request: NextRequest) {
     // Exchange the authorization code for tokens
     const clientId = process.env.GOOGLE_CLIENT_ID;
     const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
-    const redirectUri = 'https://minerva-receipt-processor-frontend-2jdmzwe4c.vercel.app/';
+    const redirectUri = 'https://minerva-receipt-processor-frontend-eox5tnagv.vercel.app/';
     
     if (!clientId || !clientSecret) {
       console.error('Google OAuth credentials not configured');
