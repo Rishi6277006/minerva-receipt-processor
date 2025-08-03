@@ -228,8 +228,8 @@ export default function Dashboard() {
       // REAL Google OAuth - Get credentials from environment
       const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
       
-      // Use the main app URL as redirect (simpler and more reliable)
-      const redirectUri = 'https://minerva-receipt-processor-frontend-eox5tnagv.vercel.app/';
+      // Use the current domain dynamically to avoid deployment issues
+      const redirectUri = window.location.origin + '/';
       
       const scopes = [
         'https://www.googleapis.com/auth/gmail.readonly',
