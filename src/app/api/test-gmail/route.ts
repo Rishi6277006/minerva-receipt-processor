@@ -1,24 +1,59 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { google } from 'googleapis';
 
-// Simulated Gmail API test endpoint
+// Real Gmail API test endpoint
 export async function GET(request: NextRequest) {
   try {
-    console.log('Testing Gmail API connection simulation...');
+    console.log('Testing Gmail API connection...');
 
-    // Simulate Gmail API connection
-    await new Promise(resolve => setTimeout(resolve, 2000)); // Simulate connection time
+    // Get service account credentials from environment
+    const credentialsJson = process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON;
+    
+    if (!credentialsJson) {
+      throw new Error('GOOGLE_APPLICATION_CREDENTIALS_JSON environment variable not set');
+    }
 
-    console.log('Gmail API connection simulation successful!');
+    const credentials = JSON.parse(credentialsJson);
+    console.log('Service account credentials loaded:', {
+      project_id: credentials.project_id,
+      client_email: credentials.client_email
+    });
+
+    // Create JWT client for service account
+    const auth = new google.auth.JWT();
+    auth.fromJSON(credentials);
+    auth.scopes = ['https://www.googleapis.com/auth/gmail.readonly'];
+    
+    // Test with a specific email
+    const testEmail = 'thakker834@gmail.com';
+    auth.subject = testEmail;
+
+    console.log('JWT auth created, subject set to:', testEmail);
+
+    // Create Gmail API client
+    const gmail = google.gmail({ version: 'v1', auth });
+
+    console.log('Gmail API client created, testing connection...');
+
+    // Test connection by getting profile
+    const profile = await gmail.users.getProfile({
+      userId: 'me'
+    });
+
+    console.log('Gmail API connection successful!', {
+      emailAddress: profile.data.emailAddress,
+      messagesTotal: profile.data.messagesTotal,
+      threadsTotal: profile.data.threadsTotal
+    });
 
     return NextResponse.json({
       success: true,
       message: 'Gmail API connection test successful!',
       profile: {
-        emailAddress: 'thakker834@gmail.com',
-        messagesTotal: 1250,
-        threadsTotal: 450
-      },
-      note: 'This is a simulation. In production, this would connect to real Gmail API.'
+        emailAddress: profile.data.emailAddress,
+        messagesTotal: profile.data.messagesTotal,
+        threadsTotal: profile.data.threadsTotal
+      }
     });
 
   } catch (error) {

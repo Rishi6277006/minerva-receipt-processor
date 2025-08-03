@@ -13,11 +13,24 @@ export async function POST(request: NextRequest) {
 
     console.log('Starting REAL Gmail API processing for:', email);
 
-    // Create service account credentials
-    const auth = new google.auth.GoogleAuth({
-      scopes: ['https://www.googleapis.com/auth/gmail.readonly'],
-      keyFile: undefined, // Will use default credentials or environment
+    // Get service account credentials from environment
+    const credentialsJson = process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON;
+    
+    if (!credentialsJson) {
+      throw new Error('GOOGLE_APPLICATION_CREDENTIALS_JSON environment variable not set');
+    }
+
+    const credentials = JSON.parse(credentialsJson);
+    console.log('Service account credentials loaded:', {
+      project_id: credentials.project_id,
+      client_email: credentials.client_email
     });
+
+    // Create JWT client for service account
+    const auth = new google.auth.JWT();
+    auth.fromJSON(credentials);
+    auth.scopes = ['https://www.googleapis.com/auth/gmail.readonly'];
+    auth.subject = email; // Impersonate the user
 
     // Create Gmail API client
     const gmail = google.gmail({ version: 'v1', auth });
