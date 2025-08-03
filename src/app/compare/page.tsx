@@ -58,8 +58,8 @@ export default function ComparePage() {
   const [isAddingSampleData, setIsAddingSampleData] = useState(false);
 
   const fetchComparisonData = async () => {
-    try {
-      setIsLoading(true);
+      try {
+        setIsLoading(true);
       const response = await fetch('/api/compare');
       const result = await response.json();
       
@@ -68,13 +68,13 @@ export default function ComparePage() {
       } else {
         setComparisonData(result);
       }
-    } catch (err) {
+      } catch (err) {
       console.error('Error fetching comparison data:', err);
-      setError('Failed to load comparison data');
-    } finally {
-      setIsLoading(false);
-    }
-  };
+        setError('Failed to load comparison data');
+      } finally {
+        setIsLoading(false);
+      }
+    };
 
   useEffect(() => {
     fetchComparisonData();
@@ -83,7 +83,7 @@ export default function ComparePage() {
   const addSampleData = async () => {
     try {
       setIsAddingSampleData(true);
-      
+
       // Add sample data directly to the current state for better visualizations
       const sampleData = [
         { vendor: 'Starbucks', amount: 24.50, category: 'Food & Beverage', description: 'Coffee and snacks' },
@@ -142,7 +142,7 @@ export default function ComparePage() {
             <div className="flex items-center gap-2 text-red-600">
               <AlertCircle className="h-5 w-5" />
               <p>{error}</p>
-            </div>
+        </div>
           </CardContent>
         </Card>
       </div>
@@ -191,7 +191,7 @@ export default function ComparePage() {
 
   return (
     <div className="container mx-auto p-6 space-y-6">
-      {/* Header */}
+        {/* Header */}
       <div className="text-center space-y-4">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Transaction Comparison</h1>
@@ -225,9 +225,9 @@ export default function ComparePage() {
             Balance Data for Demo
           </Button>
         </div>
-      </div>
+        </div>
 
-      {/* Summary Cards */}
+        {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card className="bg-green-50 border-green-200">
           <CardContent className="p-4">
@@ -252,8 +252,8 @@ export default function ComparePage() {
               </div>
               <FileText className="h-8 w-8 text-yellow-600" />
             </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
 
         <Card className="bg-blue-50 border-blue-200">
           <CardContent className="p-4">
@@ -265,8 +265,8 @@ export default function ComparePage() {
               </div>
               <CreditCard className="h-8 w-8 text-blue-600" />
             </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
 
         <Card className="bg-purple-50 border-purple-200">
           <CardContent className="p-4">
@@ -291,8 +291,8 @@ export default function ComparePage() {
               <PieChart className="h-5 w-5" />
               Transaction Distribution
             </CardTitle>
-          </CardHeader>
-          <CardContent>
+            </CardHeader>
+            <CardContent>
             <ResponsiveContainer width="100%" height={300}>
               <PieChart>
                 <Pie
@@ -317,8 +317,8 @@ export default function ComparePage() {
                 />
               </PieChart>
             </ResponsiveContainer>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
 
         {/* Category Distribution Bar Chart */}
         <Card>
@@ -327,8 +327,8 @@ export default function ComparePage() {
               <BarChart className="h-5 w-5" />
               Receipt Categories (Unmatched)
             </CardTitle>
-          </CardHeader>
-          <CardContent>
+            </CardHeader>
+            <CardContent>
             <ResponsiveContainer width="100%" height={300}>
               <BarChart data={categoryChartData}>
                 <CartesianGrid strokeDasharray="3 3" />
@@ -343,9 +343,9 @@ export default function ComparePage() {
                 <Bar dataKey="count" fill="#f59e0b" name="Count" />
               </BarChart>
             </ResponsiveContainer>
-          </CardContent>
-        </Card>
-      </div>
+            </CardContent>
+          </Card>
+        </div>
 
       {/* Monthly Trends */}
       {monthlyChartData.length > 0 && (
@@ -372,7 +372,7 @@ export default function ComparePage() {
 
       {/* Main Comparison Tabs */}
       <Tabs defaultValue="matched" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-3">
+              <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="matched" className="flex items-center gap-2">
             <CheckCircle className="h-4 w-4" />
             Matched ({totalMatched})
@@ -385,9 +385,9 @@ export default function ComparePage() {
             <CreditCard className="h-4 w-4" />
             Bank Only ({totalBankOnly})
           </TabsTrigger>
-        </TabsList>
+              </TabsList>
 
-        {/* Matched Transactions */}
+                  {/* Matched Transactions */}
         <TabsContent value="matched" className="space-y-4">
           {comparisonData.matched.length === 0 ? (
             <Card>
@@ -405,7 +405,7 @@ export default function ComparePage() {
                     <div className="flex items-center justify-between mb-4">
                       <div className="flex items-center gap-3">
                         <CheckCircle className="h-6 w-6 text-green-600" />
-                        <div>
+                            <div>
                           <h3 className="font-semibold text-lg text-gray-900">{item.ledger.vendor}</h3>
                           <p className="text-sm text-gray-600">{item.ledger.description}</p>
                         </div>
@@ -426,11 +426,11 @@ export default function ComparePage() {
                           <div className="flex justify-between">
                             <span className="text-sm text-gray-600">Amount:</span>
                             <span className="font-medium">${item.ledger.amount.toFixed(2)}</span>
-                          </div>
+                            </div>
                           <div className="flex justify-between">
                             <span className="text-sm text-gray-600">Date:</span>
                             <span className="text-sm">{new Date(item.ledger.transactionDate).toLocaleDateString()}</span>
-                          </div>
+                            </div>
                           <div className="flex justify-between">
                             <span className="text-sm text-gray-600">Category:</span>
                             <Badge variant="outline" className="text-xs">{item.ledger.category}</Badge>
@@ -448,20 +448,20 @@ export default function ComparePage() {
                           <div className="flex justify-between">
                             <span className="text-sm text-gray-600">Amount:</span>
                             <span className="font-medium">${item.bank.amount.toFixed(2)}</span>
-                          </div>
+                            </div>
                           <div className="flex justify-between">
                             <span className="text-sm text-gray-600">Date:</span>
                             <span className="text-sm">{new Date(item.bank.transactionDate).toLocaleDateString()}</span>
-                          </div>
+                            </div>
                           <div className="flex justify-between">
                             <span className="text-sm text-gray-600">Type:</span>
                             <Badge variant="outline" className="text-xs">{item.bank.type}</Badge>
                           </div>
                         </div>
                       </div>
-                    </div>
-                  </CardContent>
-                </Card>
+                      </div>
+                    </CardContent>
+                  </Card>
               ))}
             </div>
           )}
@@ -485,7 +485,7 @@ export default function ComparePage() {
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
                         <FileText className="h-5 w-5 text-yellow-600" />
-                        <div>
+                            <div>
                           <h3 className="font-semibold text-gray-900">{item.vendor}</h3>
                           <p className="text-sm text-gray-600">{item.description}</p>
                           <div className="flex items-center gap-4 mt-1">
@@ -500,13 +500,13 @@ export default function ComparePage() {
                         <p className="font-bold text-lg text-gray-900">${item.amount.toFixed(2)}</p>
                         <Badge className="bg-yellow-100 text-yellow-800 text-xs">No Bank Match</Badge>
                       </div>
-                    </div>
-                  </CardContent>
-                </Card>
+                      </div>
+                    </CardContent>
+                  </Card>
               ))}
-            </div>
+                </div>
           )}
-        </TabsContent>
+              </TabsContent>
 
         {/* Bank Only */}
         <TabsContent value="bank" className="space-y-4">
@@ -526,7 +526,7 @@ export default function ComparePage() {
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
                         <CreditCard className="h-5 w-5 text-blue-600" />
-                        <div>
+                  <div>
                           <h3 className="font-semibold text-gray-900">{item.description}</h3>
                           <div className="flex items-center gap-4 mt-1">
                             <span className="text-xs text-gray-500">
@@ -535,16 +535,16 @@ export default function ComparePage() {
                             <Badge variant="outline" className="text-xs">{item.type}</Badge>
                           </div>
                         </div>
-                      </div>
+                  </div>
                       <div className="text-right">
                         <p className="font-bold text-lg text-gray-900">${item.amount.toFixed(2)}</p>
                         <Badge className="bg-blue-100 text-blue-800 text-xs">No Receipt Match</Badge>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
+                  </div>
+                </div>
+          </CardContent>
+        </Card>
               ))}
-            </div>
+      </div>
           )}
         </TabsContent>
       </Tabs>
