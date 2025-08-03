@@ -233,51 +233,61 @@ export default function Dashboard() {
         return;
       }
 
-      // Show connecting message
-      alert('📧 Connecting to email server...\n\nEmail: ' + emailAddress + '\n\nThis will connect to your actual email and scan for receipts.');
+      // For REAL email processing, we need password to connect to IMAP server
+      const password = prompt('Enter your email password (this connects to your actual email server):');
+      
+      if (!password) {
+        alert('❌ Please enter your email password to connect to your email server.');
+        return;
+      }
 
-      // Try to connect to the backend email service for real processing
+      // Show connecting message
+      alert('🔐 REAL Email Processing Starting...\n\nEmail: ' + emailAddress + '\n\n📡 Connecting to IMAP server...\n🔍 Scanning your actual inbox for receipt emails...\n📧 Reading email content and headers...\n💰 Extracting receipt amounts and details...\n🤖 Processing with AI...');
+
+      // Connect to the REAL email processing API
       try {
-        const response = await fetch('/api/test-backend', {
+        const response = await fetch('/api/email-processor', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            action: 'checkForReceiptsForUser',
-            email: emailAddress
+            email: emailAddress,
+            password: password
           })
         });
 
         const result = await response.json();
         
         if (result.success) {
-          // Real email processing worked
+          // REAL email processing worked
           setEmailConnectionStatus({ connected: true, emailAddress: emailAddress, provider: 'Email' });
           
           const receiptCount = result.receiptsFound || 0;
-          alert('🎉 Email Connected Successfully!\n\nEmail: ' + emailAddress + '\n\n📧 Found ' + receiptCount + ' receipt emails\n\nAll receipts have been processed and added to your ledger!');
+          const receipts = result.receipts || [];
+          
+          if (receiptCount === 0) {
+            alert('📧 Email Processing Complete!\n\nEmail: ' + emailAddress + '\n\n✅ Successfully connected to your email server\n🔍 Scanned your inbox for receipt emails\n📭 No receipt emails found in your inbox\n\n💡 Try uploading some receipt images or check if you have receipt emails from Amazon, Starbucks, Uber, etc.');
+          } else {
+            // Show detailed results with extracted data
+            const receiptDetails = receipts.map((receipt: any) => {
+              const extractedInfo = receipt.extractedData ? 
+                `\n   💰 Amount: ${receipt.amount} | 🏷️ Category: ${receipt.category} | 📄 Real Email: ${receipt.realEmail ? 'Yes' : 'No'}` : '';
+              return `• ${receipt.subject}${extractedInfo}`;
+            }).join('\n\n');
+            
+            alert('🎉 REAL Email Processing Complete!\n\nEmail: ' + emailAddress + '\n\n📧 Found ' + receiptCount + ' receipt emails in your inbox:\n\n' + receiptDetails + '\n\n🤖 AI extracted transaction details from your real emails\n📊 All receipts added to ledger\n✅ Ready for bank statement matching\n\n💡 This connected to your actual email server and processed real emails!');
+          }
           
           // Refresh the dashboard
           window.location.reload();
         } else {
-          // Fallback to realistic demo with the actual email address
-          setEmailConnectionStatus({ connected: true, emailAddress: emailAddress, provider: 'Email' });
-          
-          // Show realistic email processing with the real email address
-          alert('📧 Email Processing Complete!\n\nEmail: ' + emailAddress + '\n\nFound 5 receipt emails:\n\n• Amazon Order Receipt - $45.99 (2024-01-15)\n• Starbucks Coffee Receipt - $8.50 (2024-01-14)\n• Uber Ride Receipt - $23.75 (2024-01-13)\n• Netflix Subscription - $15.99 (2024-01-12)\n• Spotify Premium - $9.99 (2024-01-11)\n\nAll receipts have been processed and added to your ledger!');
-          
-          // Refresh the dashboard
-          window.location.reload();
+          // Show error message
+          alert('❌ Email processing failed: ' + (result.error || 'Unknown error') + '\n\n💡 Make sure your email and password are correct, and that your email provider allows IMAP access.');
         }
       } catch (error) {
-        // If backend fails, show realistic demo with the actual email address
-        setEmailConnectionStatus({ connected: true, emailAddress: emailAddress, provider: 'Email' });
-        
-        alert('📧 Email Processing Complete!\n\nEmail: ' + emailAddress + '\n\nFound 5 receipt emails:\n\n• Amazon Order Receipt - $45.99 (2024-01-15)\n• Starbucks Coffee Receipt - $8.50 (2024-01-14)\n• Uber Ride Receipt - $23.75 (2024-01-13)\n• Netflix Subscription - $15.99 (2024-01-12)\n• Spotify Premium - $9.99 (2024-01-11)\n\nAll receipts have been processed and added to your ledger!');
-        
-        // Refresh the dashboard
-        window.location.reload();
+        console.error('Email processing error:', error);
+        alert('❌ Failed to connect to email server. Please check your credentials and try again.');
       }
       
     } catch (error) {
@@ -288,7 +298,7 @@ export default function Dashboard() {
       const button = document.querySelector('[data-connect-gmail]') as HTMLButtonElement;
       if (button) {
         button.disabled = false;
-        button.innerHTML = '<Mail className="h-4 w-4 mr-2" /> Process Emails';
+        button.innerHTML = '<Mail className="h-4 w-4 mr-2" /> Process Real Emails';
       }
     }
   };
@@ -432,10 +442,10 @@ export default function Dashboard() {
                 data-connect-gmail
                 onClick={connectGmail}
                 className="bg-blue-50 border-blue-200 text-blue-700 hover:bg-blue-100"
-                title="Demo: OAuth Gmail integration - In production, this would connect to your Gmail account"
+                title="REAL Email Processing - Connects to your actual email server via IMAP"
               >
                 <Mail className="h-4 w-4 mr-2" />
-                Process Emails
+                Process Real Emails
               </Button>
             )}
             
