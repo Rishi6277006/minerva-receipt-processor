@@ -225,9 +225,10 @@ export default function Dashboard() {
         button.innerHTML = '<RefreshCw className="h-4 w-4 mr-2 animate-spin" /> Connecting...';
       }
 
-      // REAL Google OAuth - Use a simple, guaranteed redirect URI
+      // REAL Google OAuth - Use the current domain
       const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
-      const redirectUri = 'https://minerva-receipt-processor-frontend-eox5tnagv.vercel.app/';
+      const currentDomain = window.location.origin;
+      const redirectUri = `${currentDomain}/`;
       
       const scopes = [
         'https://www.googleapis.com/auth/gmail.readonly',
@@ -248,10 +249,13 @@ export default function Dashboard() {
         `&access_type=offline` +
         `&prompt=consent`;
 
-      console.log('OAuth URL:', authUrl);
-      console.log('Client ID:', clientId);
+      console.log('Current Domain:', currentDomain);
       console.log('Redirect URI:', redirectUri);
+      console.log('OAuth URL:', authUrl);
 
+      // Show the URL first for debugging
+      alert(`OAuth URL:\n\n${authUrl}\n\nRedirect URI: ${redirectUri}\n\nAdd this redirect URI to Google Cloud Console and click OK to proceed.`);
+      
       // REDIRECT TO REAL GOOGLE OAUTH
       window.location.href = authUrl;
       
