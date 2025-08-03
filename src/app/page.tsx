@@ -254,7 +254,7 @@ export default function Dashboard() {
       console.log('Client ID:', clientId);
       console.log('Redirect URI:', redirectUri);
 
-      // REDIRECT TO REAL GOOGLE OAUTH
+      // REDIRECT TO REAL GOOGLE OAUTH - DEPLOYMENT TEST
       window.location.href = authUrl;
       
     } catch (error) {
