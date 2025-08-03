@@ -3,8 +3,20 @@ import { NextRequest, NextResponse } from 'next/server';
 // Test endpoint to simulate sending real receipt emails to the webhook
 export async function POST(request: NextRequest) {
   try {
+    console.log('Test webhook endpoint called');
+    
     const body = await request.json();
+    console.log('Request body:', body);
+    
     const { email } = body;
+
+    if (!email) {
+      console.log('No email provided');
+      return NextResponse.json({
+        success: false,
+        error: 'Email is required'
+      }, { status: 400 });
+    }
 
     console.log('Testing webhook with email:', email);
 
@@ -53,6 +65,8 @@ export async function POST(request: NextRequest) {
         }
       }
     ];
+
+    console.log('Processing', testEmails.length, 'test emails');
 
     const results = [];
     const processedReceipts = [];
@@ -123,6 +137,8 @@ export async function POST(request: NextRequest) {
         });
       }
     }
+    
+    console.log('Test completed. Processed receipts:', processedReceipts.length);
     
     return NextResponse.json({
       success: true,
@@ -343,8 +359,11 @@ function getCategoryFromMerchant(merchant: string): string | null {
 }
 
 export async function GET() {
+  console.log('Test webhook GET endpoint called');
   return NextResponse.json({
-    message: 'Test webhook endpoint ready',
-    usage: 'POST with { "email": "your-email@example.com" } to test webhook processing'
+    success: true,
+    message: 'Test webhook endpoint is working',
+    usage: 'POST with { "email": "your-email@example.com" } to test webhook processing',
+    timestamp: new Date().toISOString()
   });
 } 

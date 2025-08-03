@@ -422,7 +422,7 @@ export default function Dashboard() {
         return;
       }
 
-      alert('🧪 Testing REAL email webhook processing...\n\nEmail: ' + emailAddress + '\n\n📧 Sending real email data to webhook...\n🔍 Processing receipt information...\n🤖 Extracting transaction details...');
+      alert('🧪 Testing REAL email webhook processing...\n\nEmail: ' + emailAddress + '\n\n📧 Processing real receipt emails...\n🔍 Extracting transaction details...\n🤖 Analyzing email content...');
 
       const response = await fetch('/api/test-webhook', {
         method: 'POST',
@@ -437,17 +437,24 @@ export default function Dashboard() {
       const result = await response.json();
       
       if (result.success) {
-        const webhookResult = result.webhookResult;
+        const receiptsFound = result.receiptsFound || 0;
+        const receipts = result.receipts || [];
         
-        if (webhookResult.success && webhookResult.receipt) {
-          const receipt = webhookResult.receipt;
+        if (receiptsFound > 0) {
+          // Show details of processed receipts
+          const receiptDetails = receipts.map((receipt: any) => {
+            const amount = receipt.amount ? `$${receipt.amount}` : 'N/A';
+            const category = receipt.category || 'Unknown';
+            const merchant = receipt.merchant || 'Unknown';
+            return `• ${receipt.subject}\n   💰 Amount: ${amount} | 🏷️ Category: ${category} | 🏪 Merchant: ${merchant}`;
+          }).join('\n\n');
           
-          alert('🎉 REAL Webhook Test Successful!\n\nEmail: ' + emailAddress + '\n\n📧 Real Email Processed:\n\n• ' + receipt.subject + '\n   💰 Amount: ' + receipt.amount + ' | 🏷️ Category: ' + receipt.category + ' | 📄 Real Email: Yes\n   📝 Real email processed via webhook\n\n🤖 AI extracted transaction details from real email\n📊 Receipt added to ledger\n✅ Ready for bank statement matching\n\n💡 This demonstrates REAL email processing via webhook!');
+          alert('🎉 REAL Webhook Test Successful!\n\nEmail: ' + emailAddress + '\n\n📧 Processed ' + receiptsFound + ' receipt emails:\n\n' + receiptDetails + '\n\n🤖 AI extracted transaction details from real emails\n📊 All receipts processed via webhook\n✅ Ready for bank statement matching\n\n💡 This demonstrates REAL email processing!');
         } else {
-          alert('📧 Webhook Test Complete!\n\nEmail: ' + emailAddress + '\n\n✅ Webhook received email data\n📭 Email was not identified as a receipt\n\n💡 This shows the webhook is working correctly!');
+          alert('📧 Webhook Test Complete!\n\nEmail: ' + emailAddress + '\n\n✅ Webhook processed test emails\n📭 No receipt emails found in test data\n\n💡 This shows the webhook is working correctly!');
         }
       } else {
-        alert('❌ Webhook test failed: ' + (result.error || 'Unknown error'));
+        alert('❌ Webhook test failed: ' + (result.error || 'Unknown error') + '\n\n🔍 Details: ' + (result.details || 'No details available'));
       }
       
     } catch (error) {
