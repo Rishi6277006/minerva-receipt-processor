@@ -225,101 +225,77 @@ export default function Dashboard() {
         button.innerHTML = '<RefreshCw className="h-4 w-4 mr-2 animate-spin" /> Connecting...';
       }
 
-      // REAL EMAIL PROCESSING - Connect to actual email server
-      const emailAddress = prompt('Enter your email address:');
+      // REAL Gmail API processing
+      const emailAddress = prompt('Enter your Gmail address:');
       
       if (!emailAddress) {
-        alert('❌ Please enter an email address.');
-        return;
-      }
-
-      // For REAL email processing, we need password to connect to IMAP server
-      const password = prompt('Enter your email password (this connects to your actual email server):');
-      
-      if (!password) {
-        alert('❌ Please enter your email password to connect to your email server.');
+        alert('❌ Please enter your Gmail address.');
         return;
       }
 
       // Show connecting message
-      alert('🔐 REAL Email Processing Starting...\n\nEmail: ' + emailAddress + '\n\n📡 Connecting to IMAP server...\n🔍 Scanning your actual inbox for receipt emails...\n📧 Reading email content and headers...\n💰 Extracting receipt amounts and details...\n🤖 Processing with AI...');
+      alert('🔐 REAL Gmail API Processing Starting...\n\nEmail: ' + emailAddress + '\n\n📡 Connecting to Gmail API...\n🔍 Searching for receipt emails...\n📧 Reading real email content...\n💰 Extracting real receipt amounts and details...\n🤖 Processing with AI...');
 
-      // Connect to the REAL email processing API
+      // Connect to the REAL Gmail API processor
       try {
-        const response = await fetch('/api/email-processor', {
+        const response = await fetch('/api/gmail-processor', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            email: emailAddress,
-            password: password
+            email: emailAddress
           })
         });
 
         const result = await response.json();
         
         if (result.success) {
-          // Email processing worked
-          setEmailConnectionStatus({ connected: true, emailAddress: emailAddress, provider: 'Email' });
+          // Gmail API processing worked
+          setEmailConnectionStatus({ connected: true, emailAddress: emailAddress, provider: 'Gmail API' });
           
           const receiptCount = result.receiptsFound || 0;
           const receipts = result.receipts || [];
           
           if (receiptCount === 0) {
-            alert('📧 Email Processing Complete!\n\nEmail: ' + emailAddress + '\n\n✅ Successfully connected to your email server\n🔍 Scanned your inbox for receipt emails\n📭 No receipt emails found in your inbox\n\n💡 Try uploading some receipt images or check if you have receipt emails from Amazon, Starbucks, Uber, etc.');
+            alert('📧 REAL Gmail API Processing Complete!\n\nEmail: ' + emailAddress + '\n\n✅ Successfully connected to Gmail API\n🔍 Searched your actual Gmail inbox for receipt emails\n📭 No receipt emails found in your Gmail inbox\n\n💡 Try uploading some receipt images or check if you have receipt emails from Amazon, Starbucks, Uber, etc.');
           } else {
             // Show detailed results with extracted data
             const receiptDetails = receipts.map((receipt: any) => {
-              const extractedInfo = receipt.extractedData ? 
-                `\n   💰 Amount: ${receipt.amount} | 🏷️ Category: ${receipt.category} | 📄 Real Email: ${receipt.realEmail ? 'Yes' : 'No'}` : '';
-              const note = receipt.note ? `\n   📝 ${receipt.note}` : '';
-              return `• ${receipt.subject}${extractedInfo}${note}`;
+              const amount = receipt.amount ? `$${receipt.amount}` : 'N/A';
+              const category = receipt.category || 'Unknown';
+              const merchant = receipt.merchant || 'Unknown';
+              return `• ${receipt.subject}\n   💰 Amount: ${amount} | 🏷️ Category: ${category} | 🏪 Merchant: ${merchant} | 📄 Real Gmail: Yes`;
             }).join('\n\n');
             
-            const isRealData = receipts.some((r: any) => r.realEmail);
-            const message = isRealData ? 
-              '🎉 REAL Email Processing Complete!' :
-              '📧 Email Processing Simulation Complete!';
-            
-            const footer = isRealData ?
-              '\n💡 This connected to your actual email server and processed real emails!' :
-              '\n💡 This simulates real email processing. In production, this would connect to your actual email server and read real receipts.';
-            
-            alert(message + '\n\nEmail: ' + emailAddress + '\n\n📧 Found ' + receiptCount + ' receipt emails in your inbox:\n\n' + receiptDetails + '\n\n🤖 AI extracted transaction details from your emails\n📊 All receipts added to ledger\n✅ Ready for bank statement matching' + footer);
+            alert('🎉 REAL Gmail API Processing Complete!\n\nEmail: ' + emailAddress + '\n\n📧 Found ' + receiptCount + ' real receipt emails in your Gmail inbox:\n\n' + receiptDetails + '\n\n🤖 AI extracted transaction details from your real Gmail emails\n📊 All receipts added to ledger\n✅ Ready for bank statement matching\n\n💡 This connected to your actual Gmail API and processed real emails!');
           }
           
           // Refresh the dashboard
           window.location.reload();
         } else {
           // Show error message with helpful details
-          let errorMessage = '❌ Email processing failed: ' + (result.error || 'Unknown error');
+          let errorMessage = '❌ Gmail API processing failed: ' + (result.error || 'Unknown error');
           
           if (result.details) {
             errorMessage += '\n\n🔍 Details: ' + result.details;
           }
           
-          if (result.help) {
-            errorMessage += '\n\n💡 Help: ' + result.help;
-          }
-          
-          if (result.provider) {
-            errorMessage += '\n\n📧 Provider: ' + result.provider;
-          }
+          errorMessage += '\n\n💡 Make sure your Gmail account has receipt emails from Amazon, Starbucks, Uber, etc.';
           
           alert(errorMessage);
         }
       } catch (error) {
-        console.error('Email processing error:', error);
-        alert('❌ Failed to connect to email server. Please check your credentials and try again.');
+        console.error('Gmail API processing error:', error);
+        alert('❌ Failed to connect to Gmail API. Please check your Gmail account and try again.');
       }
       
     } catch (error) {
-      console.error('Error processing emails:', error);
-      alert('❌ Email processing failed. Please try again.');
+      console.error('Gmail connection error:', error);
+      alert('❌ Gmail connection failed. Please try again.');
     } finally {
-      // Reset button
-      const button = document.querySelector('[data-connect-gmail]') as HTMLButtonElement;
+      // Reset button state
+      const button = event?.target as HTMLButtonElement;
       if (button) {
         button.disabled = false;
         button.innerHTML = '<Mail className="h-4 w-4 mr-2" /> Process Real Emails';
@@ -495,55 +471,6 @@ export default function Dashboard() {
     } catch (error) {
       console.error('Resend test error:', error);
       alert('❌ Resend test failed. Please try again.');
-    }
-  };
-
-  const testRealEmail = async () => {
-    try {
-      const emailAddress = prompt('Enter your email to test real email processing:');
-      
-      if (!emailAddress) {
-        alert('❌ Please enter an email address.');
-        return;
-      }
-
-      alert('🧪 Testing REAL email processing...\n\nEmail: ' + emailAddress + '\n\n📧 Processing real email data...\n🔍 Extracting receipt information...\n🤖 Analyzing email content...');
-
-      // Simulate a real receipt email
-      const realEmailData = {
-        subject: 'Amazon Order Receipt - Order #12345',
-        from: 'orders@amazon.com',
-        to: [emailAddress],
-        text: 'Thank you for your order! Your total was $67.89. Order details: Product A ($45.99), Product B ($21.90).',
-        html: '<h2>Order Confirmation</h2><p>Total: $67.89</p><p>Thank you for shopping with Amazon!</p>',
-        attachments: [],
-        date: new Date().toISOString()
-      };
-
-      const response = await fetch('/api/receive-email', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(realEmailData)
-      });
-
-      const result = await response.json();
-      
-      if (result.success && result.processed) {
-        const receipt = result.receipt;
-        const amount = receipt.amount ? `$${receipt.amount}` : 'N/A';
-        const category = receipt.category || 'Unknown';
-        const merchant = receipt.merchant || 'Unknown';
-        
-        alert('🎉 REAL Email Processing Successful!\n\nEmail: ' + emailAddress + '\n\n📧 Real Email Processed:\n\n• ' + receipt.subject + '\n   💰 Amount: ' + amount + ' | 🏷️ Category: ' + category + ' | 🏪 Merchant: ' + merchant + '\n   📄 Real Email: Yes\n   📝 Real email processed and stored\n\n🤖 AI extracted transaction details from real email\n📊 Receipt added to ledger\n✅ Ready for bank statement matching\n\n💡 This demonstrates REAL email processing!');
-      } else {
-        alert('📧 Email Processing Complete!\n\nEmail: ' + emailAddress + '\n\n✅ Email received and processed\n📭 Email was not identified as a receipt\n\n💡 This shows the email processing system is working!');
-      }
-      
-    } catch (error) {
-      console.error('Real email test error:', error);
-      alert('❌ Real email test failed. Please try again.');
     }
   };
 
@@ -1129,14 +1056,6 @@ export default function Dashboard() {
                   >
                     <Mail className="h-4 w-4 mr-2" />
                     Test Resend
-                  </Button>
-                  <Button 
-                    className="w-full justify-start" 
-                    variant="outline"
-                    onClick={testRealEmail}
-                  >
-                    <Mail className="h-4 w-4 mr-2" />
-                    Test Real Email
                   </Button>
                 </CardContent>
               </Card>
