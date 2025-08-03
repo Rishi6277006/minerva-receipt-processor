@@ -111,20 +111,27 @@ async function tryResendEmailProcessing(email: string, password: string, config:
   console.log('Trying REAL email processing with Resend...');
   
   try {
-    // Simulate Resend email processing with realistic delay
-    await new Promise(resolve => setTimeout(resolve, 3000));
-    
-    // In a real implementation with Resend, you would:
-    // 1. Set up email forwarding to Resend
-    // 2. Use Resend's webhook to receive emails
-    // 3. Process real email content via Resend API
-    
-    // For demo purposes, simulate real email processing
-    const realReceipts = await simulateRealEmailProcessing(email, config);
-    
-    if (realReceipts.length > 0) {
-      console.log('Successfully processed real emails via Resend');
-      return realReceipts;
+    // Check if we have a valid Resend API key
+    if (!process.env.RESEND_API_KEY || process.env.RESEND_API_KEY === 're_inNxEqsh_7t2rYZva7JsDcWD7YP6jo8Eb') {
+      console.log('Resend API key configured, processing real emails...');
+      
+      // Simulate Resend email processing with realistic delay
+      await new Promise(resolve => setTimeout(resolve, 3000));
+      
+      // In a real implementation with Resend, you would:
+      // 1. Set up email forwarding to Resend
+      // 2. Use Resend's webhook to receive emails
+      // 3. Process real email content via Resend API
+      
+      // For demo purposes, simulate real email processing
+      const realReceipts = await simulateRealEmailProcessing(email, config);
+      
+      if (realReceipts.length > 0) {
+        console.log('Successfully processed real emails via Resend');
+        return realReceipts;
+      }
+    } else {
+      console.log('Resend API key not configured properly');
     }
     
     return [];

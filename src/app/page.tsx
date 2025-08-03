@@ -456,6 +456,41 @@ export default function Dashboard() {
     }
   };
 
+  const testResend = async () => {
+    try {
+      const emailAddress = prompt('Enter your email to test Resend API:');
+      
+      if (!emailAddress) {
+        alert('❌ Please enter an email address.');
+        return;
+      }
+
+      alert('🧪 Testing Resend API with your email...\n\nEmail: ' + emailAddress + '\n\n📧 Sending test email via Resend...\n🔍 Verifying API key...\n✅ Testing real email processing...');
+
+      const response = await fetch('/api/test-resend', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email: emailAddress
+        })
+      });
+
+      const result = await response.json();
+      
+      if (result.success) {
+        alert('🎉 Resend API Test Successful!\n\nEmail: ' + emailAddress + '\n\n✅ Resend API key is working\n📧 Test email sent successfully\n🔗 Email ID: ' + (result.data?.id || 'N/A') + '\n\n💡 Your email processing system is ready to work with real emails!\n\n📬 Check your inbox for the test email.');
+      } else {
+        alert('❌ Resend API test failed: ' + (result.error || 'Unknown error') + '\n\n🔍 Details: ' + (result.details || 'No details available'));
+      }
+      
+    } catch (error) {
+      console.error('Resend test error:', error);
+      alert('❌ Resend test failed. Please try again.');
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
@@ -1030,6 +1065,14 @@ export default function Dashboard() {
                   >
                     <Mail className="h-4 w-4 mr-2" />
                     Test Webhook
+                  </Button>
+                  <Button 
+                    className="w-full justify-start" 
+                    variant="outline"
+                    onClick={testResend}
+                  >
+                    <Mail className="h-4 w-4 mr-2" />
+                    Test Resend
                   </Button>
                 </CardContent>
               </Card>
